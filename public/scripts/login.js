@@ -1,3 +1,28 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch('http://localhost:3000/auth/me', {
+            credentials: 'include'
+        });
+        if (response.ok) {
+            const user = await response.json();
+            const loginForm = document.getElementById('login-form');
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'success-message';
+            infoDiv.innerHTML = `
+                <span class="success-icon">✅</span>
+                Ήδη συνδεδεμένος ως <b>${user.username}</b> (${user.role})
+            `;
+            loginForm.parentNode.insertBefore(infoDiv, loginForm);
+            // Hide the login form
+            loginForm.style.display = 'none';
+            // Optionally, redirect after a few seconds:
+            // setTimeout(() => window.location.href = 'index.html', 2000);
+        }
+    } catch (err) {
+        // Not logged in, do nothing
+    }
+});
+
 handleLogIn = async (e) => {
     e.preventDefault();
 
@@ -16,6 +41,7 @@ handleLogIn = async (e) => {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({username, password})
         });
 

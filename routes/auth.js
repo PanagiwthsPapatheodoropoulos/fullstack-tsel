@@ -4,6 +4,14 @@ const { pool } = require('../config/database');
 const router = express.Router();
 
 
+
+router.get('/me', (req, res) => {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+    res.json(req.session.user);
+});
+
 router.post('/signup', async (req, res) => {
     const { 
         firstName, 
@@ -119,6 +127,13 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Λάθος username ή password' });
         }
 
+        // Set session
+        req.session.user = {
+            id: user.id,
+            username: user.username,
+            role: user.role
+        };
+
         res.json({
             message: 'Επιτυχής σύνδεση',
             user: {
@@ -136,5 +151,12 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Σφάλμα server κατά την είσοδο' });
     }
 })
+
+router.post('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        res.json({ message: 'Logged out' });
+    });
+});
 
 module.exports = router;

@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const { testConnection } = require('./config/database');
 const path = require('path');
-const cookieParser = require('cookie-parser');
+const multer = require('multer');
+const session = require('express-session');
+
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -23,9 +25,19 @@ app.use(cors({
     credentials: true
 }));
 
+
+app.use(session({
+    secret: 'u7$2kL!9pQz@1vX4eR6wT0bN8sF3cJ5h', // secret key for signing the session ID cookie
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false,      // true if using HTTPS
+        sameSite: 'lax'
+    }
+}));
+
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -36,6 +48,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/universities', universityRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/periods', require('./routes/periods'));
+
 
 // Serve main page
 app.get('/', (req, res) => {
