@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erasmus - Αίτηση</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Πρόγραμμα Erasmus+</h1>
+        <p>Αίτηση Συμμετοχής</p>
+    </div>
+
+    <nav>
+        <a href="index.html">ΑΡΧΙΚΗ</a>
+        <a href="more.html">ΠΕΡΙΣΣΟΤΕΡΑ</a>
+        <a href="reqs.html">ΕΛΑΧΙΣΤΕΣ ΑΠΑΙΤΗΣΕΙΣ</a>
+        <a href="application.html">ΑΙΤΗΣΗ</a>
+        <a href="sign-up.html">ΕΓΓΡΑΦΗ</a>
+        <a href="login.html">ΕΙΣΟΔΟΣ</a>
+    </nav>
+
+    <div class="container">
+        <div class="page-title">
+            <h2>Αίτηση Συμμετοχής στο Πρόγραμμα Erasmus+</h2>
+        </div>
+
+        <div class="application-container">
+            <div class="application-intro">
+                <p>Παρακαλούμε συμπληρώστε την παρακάτω φόρμα για να υποβάλετε την αίτησή σας για το πρόγραμμα Erasmus+. Τα πεδία με <span class="required">*</span> είναι υποχρεωτικά.</p>
+                <div class="note-box">
+                    <h4>Σημαντική Σημείωση</h4>
+                    <p>Βεβαιωθείτε ότι έχετε ελέγξει αν πληρούνται οι <a href="reqs.html">ελάχιστες απαιτήσεις</a> πριν την υποβολή της αίτησης. Για την υποβολή της αίτησης απαιτείται προηγούμενη <a href="login.html">σύνδεση</a> στην εφαρμογή.</p>
+                </div>
+            </div>
+
+            <form class="application-form">
+                <div class="form-section">
+                    <h3>Προσωπικά Στοιχεία</h3>
+                    <div class="row">
+                        <div class="col-s-12 col-m-6 col-l-6">
+                            <div class="form-group">
+                                <label for="firstname">Όνομα <span class="required">*</span></label>
+                                <input type="text" id="firstname" name="firstname" class="form-control" placeholder="Εισάγετε το όνομά σας" value="Γιώργος" disabled>
+                            </div>
+                        </div>
+                        <div class="col-s-12 col-m-6 col-l-6">
+                            <div class="form-group">
+                                <label for="lastname">Επίθετο <span class="required">*</span></label>
+                                <input type="text" id="lastname" name="lastname" class="form-control" placeholder="Εισάγετε το επίθετό σας" value="Παπαδόπουλος" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label for="student-id">Αριθμός Μητρώου <span class="required">*</span></label>
+                                <input type="text" id="student-id" name="student-id" class="form-control" placeholder="Εισάγετε τον αριθμό μητρώου σας" value="2022202200XXX" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Ακαδημαϊκά Στοιχεία</h3>
+                    <div class="row">
+                        <div class="col-s-12 col-m-6 col-l-6">
+                            <div class="form-group">
+                                <label for="passed-courses">Ποσοστό περασμένων μαθημάτων (%) <span class="required">*</span></label>
+                                <input type="number" id="passed-courses" name="passed-courses" min="0" max="100" class="form-control" placeholder="π.χ. 75">
+                            </div>
+                        </div>
+                        <div class="col-s-12 col-m-6 col-l-6">
+                            <div class="form-group">
+                                <label for="average">Μέσος όρος περασμένων μαθημάτων <span class="required">*</span></label>
+                                <input type="number" id="average" name="average" min="0" max="10" step="0.01" class="form-control" placeholder="π.χ. 7.25">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Γλωσσικές Γνώσεις</h3>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label>Επίπεδο Αγγλικής Γλώσσας <span class="required">*</span></label>
+                                <div class="radio-group english-level">
+                                    <label>
+                                        <input type="radio" name="english" value="A1"> A1
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="english" value="A2"> A2
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="english" value="B1"> B1
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="english" value="B2"> B2
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="english" value="C1"> C1
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="english" value="C2"> C2
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label>Γνώση επιπλέον ξένων γλωσσών <span class="required">*</span></label>
+                                <div class="radio-group">
+                                    <label>
+                                        <input type="radio" name="other-languages" value="yes"> ΝΑΙ
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="other-languages" value="no"> ΟΧΙ
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Επιλογή Πανεπιστημίων</h3>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label for="university1">Πανεπιστήμιο - 1η επιλογή <span class="required">*</span></label>
+                                <select id="university1" name="university1" class="form-control">
+                                    <option value="" selected disabled>Επιλέξτε πανεπιστήμιο</option>
+                                    <option value="uni1">Universität Wien (Αυστρία)</option>
+                                    <option value="uni2">Université Libre de Bruxelles (Βέλγιο)</option>
+                                    <option value="uni3">Charles University (Τσεχία)</option>
+                                    <option value="uni4">Aarhus University (Δανία)</option>
+                                    <option value="uni5">University of Helsinki (Φινλανδία)</option>
+                                    <option value="uni6">Sorbonne Université (Γαλλία)</option>
+                                    <option value="uni7">Humboldt-Universität zu Berlin (Γερμανία)</option>
+                                    <option value="uni8">University of Bologna (Ιταλία)</option>
+                                    <option value="uni9">University of Amsterdam (Ολλανδία)</option>
+                                    <option value="uni10">University of Oslo (Νορβηγία)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label for="university2">Πανεπιστήμιο - 2η επιλογή <span class="required">*</span></label>
+                                <select id="university2" name="university2" class="form-control">
+                                    <option value="" selected disabled>Επιλέξτε πανεπιστήμιο</option>
+                                    <option value="uni1">Universität Wien (Αυστρία)</option>
+                                    <option value="uni2">Université Libre de Bruxelles (Βέλγιο)</option>
+                                    <option value="uni3">Charles University (Τσεχία)</option>
+                                    <option value="uni4">Aarhus University (Δανία)</option>
+                                    <option value="uni5">University of Helsinki (Φινλανδία)</option>
+                                    <option value="uni6">Sorbonne Université (Γαλλία)</option>
+                                    <option value="uni7">Humboldt-Universität zu Berlin (Γερμανία)</option>
+                                    <option value="uni8">University of Bologna (Ιταλία)</option>
+                                    <option value="uni9">University of Amsterdam (Ολλανδία)</option>
+                                    <option value="uni10">University of Oslo (Νορβηγία)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label for="university3">Πανεπιστήμιο - 3η επιλογή <span class="required">*</span></label>
+                                <select id="university3" name="university3" class="form-control">
+                                    <option value="" selected disabled>Επιλέξτε πανεπιστήμιο</option>
+                                    <option value="uni1">Universität Wien (Αυστρία)</option>
+                                    <option value="uni2">Université Libre de Bruxelles (Βέλγιο)</option>
+                                    <option value="uni3">Charles University (Τσεχία)</option>
+                                    <option value="uni4">Aarhus University (Δανία)</option>
+                                    <option value="uni5">University of Helsinki (Φινλανδία)</option>
+                                    <option value="uni6">Sorbonne Université (Γαλλία)</option>
+                                    <option value="uni7">Humboldt-Universität zu Berlin (Γερμανία)</option>
+                                    <option value="uni8">University of Bologna (Ιταλία)</option>
+                                    <option value="uni9">University of Amsterdam (Ολλανδία)</option>
+                                    <option value="uni10">University of Oslo (Νορβηγία)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Απαραίτητα Έγγραφα</h3>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label>Αναλυτική βαθμολογία <span class="required">*</span></label>
+                                <div class="file-upload">
+                                    <input type="file" id="transcript" name="transcript" class="file-input">
+                                    <div class="file-upload-btn">
+                                        <span class="file-label">Επιλογή αρχείου</span>
+                                        <span class="file-name">Δεν έχει επιλεγεί αρχείο</span>
+                                    </div>
+                                </div>
+                                <small class="file-info">Αποδεκτοί τύποι αρχείων: PDF, JPG, PNG. Μέγιστο μέγεθος: 5MB</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label>Πτυχίο αγγλικής γλώσσας <span class="required">*</span></label>
+                                <div class="file-upload">
+                                    <input type="file" id="english-cert" name="english-cert" class="file-input">
+                                    <div class="file-upload-btn">
+                                        <span class="file-label">Επιλογή αρχείου</span>
+                                        <span class="file-name">Δεν έχει επιλεγεί αρχείο</span>
+                                    </div>
+                                </div>
+                                <small class="file-info">Αποδεκτοί τύποι αρχείων: PDF, JPG, PNG. Μέγιστο μέγεθος: 5MB</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group">
+                                <label for="other-certs">Πτυχία άλλων ξένων γλωσσών</label>
+                                <div class="file-upload">
+                                    <input type="file" id="other-certs" name="other-certs" class="file-input" multiple>
+                                    <div class="file-upload-btn">
+                                        <span class="file-label">Επιλογή αρχείων</span>
+                                        <span class="file-name">Δεν έχουν επιλεγεί αρχεία</span>
+                                    </div>
+                                </div>
+                                <small class="file-info">Αποδεκτοί τύποι αρχείων: PDF, JPG, PNG. Μέγιστο μέγεθος: 5MB ανά αρχείο. Μπορείτε να επιλέξετε πολλαπλά αρχεία.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="row">
+                        <div class="col-s-12 col-m-12 col-l-12">
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="terms" name="terms">
+                                <label>Αποδέχομαι τους <a href="#" target="_blank">όρους και προϋποθέσεις</a> του προγράμματος Erasmus+ <span class="required">*</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-s-12 col-m-6 col-l-6">
+                        <button type="reset" class="reset-btn">Καθαρισμός Φόρμας</button>
+                    </div>
+                    <div class="col-s-12 col-m-6 col-l-6">
+                        <button type="submit" class="submit-btn">Υποβολή Αίτησης</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Πρόγραμμα Erasmus+ | Όλα τα δικαιώματα διατηρούνται</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erasmus - Ελάχιστες Απαιτήσεις</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Πρόγραμμα Erasmus+</h1>
+        <p>Ελάχιστες Απαιτήσεις για Συμμετοχή</p>
+    </div>
+
+    <nav>
+        <a href="index.html">ΑΡΧΙΚΗ</a>
+        <a href="more.html">ΠΕΡΙΣΣΟΤΕΡΑ</a>
+        <a href="reqs.html">ΕΛΑΧΙΣΤΕΣ ΑΠΑΙΤΗΣΕΙΣ</a>
+        <a href="application.html">ΑΙΤΗΣΗ</a>
+        <a href="sign-up.html">ΕΓΓΡΑΦΗ</a>
+        <a href="login.html">ΕΙΣΟΔΟΣ</a>
+    </nav>
+
+    <div class="container">
+        <div class="page-title">
+            <h2>Ελάχιστες Απαιτήσεις Συμμετοχής</h2>
+        </div>
+
+        <div class="row">
+            <div class="col-s-12 col-m-12 col-l-7">
+                <div class="info-section">
+                    <h3>Βασικές Προϋποθέσεις Συμμετοχής</h3>
+                    <p>Για να μπορείτε να υποβάλετε αίτηση για το πρόγραμμα Erasmus+, θα πρέπει να πληρούνται οι παρακάτω ελάχιστες απαιτήσεις:</p>
+                    
+                    <table class="requirements-table">
+                        <thead>
+                            <tr>
+                                <th>Απαίτηση</th>
+                                <th>Ελάχιστη Τιμή</th>
+                                <th>Περιγραφή</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Έτος Σπουδών</td>
+                                <td>≥ 2ο Έτος</td>
+                                <td>Πρέπει να βρίσκεστε τουλάχιστον στο 2ο έτος σπουδών</td>
+                            </tr>
+                            <tr>
+                                <td>Περασμένα Μαθήματα</td>
+                                <td>≥ 70%</td>
+                                <td>Ποσοστό περασμένων μαθημάτων έως το προηγούμενο έτος σπουδών</td>
+                            </tr>
+                            <tr>
+                                <td>Μέσος Όρος</td>
+                                <td>≥ 6.50</td>
+                                <td>Μέσος όρος βαθμολογίας των περασμένων μαθημάτων</td>
+                            </tr>
+                            <tr>
+                                <td>Αγγλική Γλώσσα</td>
+                                <td>Επίπεδο B2 ή ανώτερο</td>
+                                <td>Πιστοποιημένη "καλή γνώση" της αγγλικής γλώσσας</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="note-box">
+                        <h4>Σημαντική Σημείωση</h4>
+                        <p>Οι παραπάνω απαιτήσεις είναι οι <strong>ελάχιστες</strong> προϋποθέσεις για την υποβολή αίτησης. Η επιλογή των φοιτητών γίνεται με βάση τα ακαδημαϊκά τους προσόντα και άλλα κριτήρια που ορίζονται από το πρόγραμμα Erasmus+.</p>
+                    </div>
+                    
+                    <h3>Πρόσθετες Πληροφορίες</h3>
+                    <p>Για περισσότερες λεπτομέρειες σχετικά με τις απαιτήσεις, μπορείτε να κατεβάσετε τα παρακάτω αρχεία:</p>
+                    
+                    <ul class="download-links">
+                        <li><a href="../media/pdfs/erasmus-requirements.pdf" target="_blank">Αναλυτικές Απαιτήσεις Προγράμματος (PDF)</a></li>
+                        <li><a href="../media/pdfs/erasmus-faq.pdf" target="_blank">Συχνές Ερωτήσεις (PDF)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-s-12 col-m-12 col-l-5">
+                <div class="info-section">
+                    <h3>Έλεγχος Επιλεξιμότητας</h3>
+                    <p>Συμπληρώστε τα παρακάτω στοιχεία για να ελέγξετε αν πληρούνται οι ελάχιστες απαιτήσεις για συμμετοχή στο πρόγραμμα Erasmus+:</p>
+                    
+                    <form class="eligibility-form">
+                        <div class="form-group">
+                            <label for="year">Τρέχον έτος σπουδών:</label>
+                            <select id="year" name="year" class="form-control">
+                                <option value="1">1ο Έτος</option>
+                                <option value="2">2ο Έτος</option>
+                                <option value="3">3ο Έτος</option>
+                                <option value="4">4ο Έτος</option>
+                                <option value="5">Μεγαλύτερο</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="passed-courses">Ποσοστό περασμένων μαθημάτων (%):</label>
+                            <input type="number" id="passed-courses" name="passed-courses" min="0" max="100" class="form-control" placeholder="π.χ. 75">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="average">Μέσος όρος μαθημάτων:</label>
+                            <input type="number" id="average" name="average" min="0" max="10" step="0.01" class="form-control" placeholder="π.χ. 7.25">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Επίπεδο Αγγλικής Γλώσσας:</label>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="english" value="A1"> A1
+                                </label>
+                                <label>
+                                    <input type="radio" name="english" value="A2"> A2
+                                </label>
+                                <label>
+                                    <input type="radio" name="english" value="B1"> B1
+                                </label>
+                                <label>
+                                    <input type="radio" name="english" value="B2"> B2
+                                </label>
+                                <label>
+                                    <input type="radio" name="english" value="C1"> C1
+                                </label>
+                                <label>
+                                    <input type="radio" name="english" value="C2"> C2
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="check-eligibility-btn">Έλεγχος Επιλεξιμότητας</button>
+                        
+                        
+                        <div class="eligibility-results" id="eligibility-results">
+                            <div class="note-box result-pending">
+                                <p>Συμπληρώστε τα στοιχεία και πατήστε το κουμπί για να ελέγξετε την επιλεξιμότητά σας.</p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="info-section">
+                    <h3>Τι να κάνετε αν δεν πληρούνται οι απαιτήσεις</h3>
+                    <p>Εάν δεν πληρούνται οι ελάχιστες απαιτήσεις, μπορείτε να:</p>
+                    <ul>
+                        <li>Επικεντρωθείτε στην βελτίωση της βαθμολογίας σας</li>
+                        <li>Εξετάσετε το ενδεχόμενο να κάνετε αίτηση το επόμενο ακαδημαϊκό έτος</li>
+                        <li>Αποκτήσετε πιστοποιητικό αγγλικής γλώσσας επιπέδου B2 ή ανώτερου</li>
+                        <li>Επικοινωνήσετε με το γραφείο Erasmus για προσωπική συμβουλευτική</li>
+                    </ul>
+
+                    <div class="contact-info">
+                        <p>
+                            <strong>Επικοινωνία:</strong> erasmus@uop.gr | Τηλ.: +30 27520 70 222
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Πρόγραμμα Erasmus+ | Όλα τα δικαιώματα διατηρούνται</p>
+    </div>
+</body>
+</html>

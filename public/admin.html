@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles/admin.css">
+</head>
+<body>
+     <div class="header">
+        <div class="header-content">
+            <div class="logo">ErasmApp - Διαχείριση</div>
+            <div class="admin-info">
+                <span>👨‍💼 Διαχειριστής</span>
+                <button class="logout-btn" onclick="handleLogout()">Αποσύνδεση</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="admin-panel">
+            <h1 class="panel-title">Πίνακας Διαχείρισης</h1>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('period')">Περίοδος Αιτήσεων</button>
+                <button class="tab" onclick="switchTab('applications')">Διαχείριση Αιτήσεων</button>
+                <button class="tab" onclick="switchTab('results')">Αποτελέσματα</button>
+                <button class="tab" onclick="switchTab('universities')">Πανεπιστήμια</button>
+            </div>
+
+            <!-- Περίοδος Αιτήσεων -->
+            <div id="period-tab" class="tab-content active">
+                <div class="message success" id="period-success"></div>
+                <div class="message error" id="period-error"></div>
+
+                <div class="period-status" id="period-status">
+                    Φόρτωση κατάστασης περιόδου...
+                </div>
+
+                <form id="period-form">
+                    <div class="form-group">
+                        <label for="start-date">Ημερομηνία Έναρξης:</label>
+                        <input type="date" id="start-date" name="startDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="end-date">Ημερομηνία Λήξης:</label>
+                        <input type="date" id="end-date" name="endDate" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Ενημέρωση Περιόδου</button>
+                </form>
+            </div>
+
+            <!-- Διαχείριση Αιτήσεων -->
+            <div id="applications-tab" class="tab-content">
+                <div class="message success" id="applications-success"></div>
+                <div class="message error" id="applications-error"></div>
+
+                <div class="filters">
+                    <h3>Φίλτρα Αναζήτησης</h3>
+                    <div class="filters-row">
+                        <div class="form-group">
+                            <label for="sort-option">Ταξινόμηση:</label>
+                            <select id="sort-option">
+                                <option value="grade_desc">Μέσος Όρος (Φθίνουσα)</option>
+                                <option value="grade_asc">Μέσος Όρος (Αύξουσα)</option>
+                                <option value="name">Ονοματεπώνυμο</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="min-success-rate">Ελάχιστο Ποσοστό Επιτυχίας (%):</label>
+                            <input type="number" id="min-success-rate" min="0" max="100" placeholder="π.χ. 70">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="university-filter">Πανεπιστήμιο:</label>
+                            <select id="university-filter">
+                                <option value="">Όλα τα Πανεπιστήμια</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" class="btn btn-primary" onclick="applyFilters()">Εφαρμογή Φίλτρων</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-success" onclick="saveAcceptedApplications()">Αποθήκευση Επιλεγμένων</button>
+                </div>
+
+                <div id="applications-loading" class="loading">Φόρτωση αιτήσεων...</div>
+                <div id="applications-container" class="applications-grid"></div>
+            </div>
+
+            <!-- Αποτελέσματα -->
+            <div id="results-tab" class="tab-content">
+                <div class="message success" id="results-success"></div>
+                <div class="message error" id="results-error"></div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="publishResults()">Δημοσίευση Αποτελεσμάτων</button>
+                </div>
+
+                <div id="results-container"></div>
+            </div>
+
+            <!-- Πανεπιστήμια -->
+            <div id="universities-tab" class="tab-content">
+                <div class="message success" id="universities-success"></div>
+                <div class="message error" id="universities-error"></div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="loadUniversitiesManagement()">Διαχείριση Πανεπιστημίων</button>
+                </div>
+
+                <div id="universities-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/admin.js"></script>
+</body>
+</html>
