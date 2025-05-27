@@ -32,8 +32,12 @@ function showMessage(elementId,message,type = 'info'){
 
 async function loadPeriodStatus() {
     try {
-        const response = await fetch('/api/applications/period', {
-            credentials: 'include'
+        const response = await fetch('/api/periods/current', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         
         if (response.ok) {
@@ -51,8 +55,12 @@ async function loadPeriodStatus() {
 
 async function checkAdminAuth(){
     try {
-        const response = await fetch('/api/checkAdmin',{
-            credentials: 'include'
+        const response = await fetch('/api/auth/check',{
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         if(response.ok){
@@ -113,18 +121,21 @@ function switchTab(tabName) {
     }
 }
 
-function setupEventListeners(){
+function setupEventListeners() {
     const periodForm = document.getElementById('period-form');
-    if(periodForm){
-        periodForm.addEventListener('submit', handlePeriodFormSubmit); 
+    if(periodForm) {
+        periodForm.addEventListener('submit', handlePeriodUpdate); // Changed from handlePeriodFormSubmit
     }
 }
 
-function displayPeriodStatus(period) {
+function displayPeriodStatus(periodResponse) {
     const statusDiv = document.getElementById('period-status');
     const now = new Date();
-    
-    if (!period.start_date || !period.end_date) {
+
+    // periodResponse is the whole response from backend
+    const period = periodResponse.period;
+
+    if (!period || !period.start_date || !period.end_date) {
         statusDiv.innerHTML = `
             <div class="status-warning">
                 ⚠️ Δεν έχει οριστεί περίοδος αιτήσεων
@@ -132,14 +143,14 @@ function displayPeriodStatus(period) {
         `;
         return;
     }
-    
+
     const startDate = new Date(period.start_date);
     const endDate = new Date(period.end_date);
-    
+
     let statusClass = 'status-inactive';
     let statusText = '';
     let statusIcon = '🔴';
-    
+
     if (now < startDate) {
         statusText = `Η περίοδος αιτήσεων θα ξεκινήσει στις ${formatDate(startDate)}`;
         statusIcon = '🟡';
@@ -153,7 +164,7 @@ function displayPeriodStatus(period) {
         statusIcon = '🔴';
         statusClass = 'status-expired';
     }
-    
+
     statusDiv.innerHTML = `
         <div class="${statusClass}">
             ${statusIcon} ${statusText}
@@ -181,17 +192,17 @@ async function handlePeriodUpdate(e) {
     }
 
     try {
-        const response = await fetch('/api/applications/period', {
+        const response = await fetch('/api/periods/set', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                startDate: startDate,
-                endDate: endDate
-            })
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            start_date: startDate,  
+            end_date: endDate       
         })
+    });
 
         if(response.ok){
             showMessage('period-success','Η περίοδος αιτήσεων ενημερώθηκε με επιτυχία');
@@ -213,7 +224,11 @@ async function loadApplications() {
     try {
         // Φόρτωση αιτήσεων
         const response = await fetch('/api/applications/admin/all', {
-            credentials: 'include'
+            method: 'GET',
+            credentials: 'include',
+            headers:{
+                'Content-Type': 'application/json'
+            }
         });
         
         if (response.ok) {
@@ -407,13 +422,18 @@ async function publishResults() {
 async function loadAcceptedApplications() {
     try {
         const response = await fetch('/api/applications/admin/accepted', {
-            credentials: 'include'
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         
         if (response.ok) {
             acceptedApplications = await response.json();
             displayAcceptedApplications();
-        } else {
+        } 
+        else {
             showMessage('results-error', 'Σφάλμα φόρτωσης δεκτών αιτήσεων');
         }
     } catch (error) {

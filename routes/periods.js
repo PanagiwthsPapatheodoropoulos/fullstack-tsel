@@ -1,12 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const path = require('path');
+
+const requireAdmin = (req, res, next) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
 
 // Get current active period
 router.get('/current', async (req, res) => {
   try {
     const query = `
-      SELECT * FROM applications_periods 
+      SELECT * FROM application_periods 
       WHERE is_active = 1 
       ORDER BY created_at DESC 
       LIMIT 1
@@ -36,14 +44,14 @@ router.get('/current', async (req, res) => {
 });
 
 // Set application period (admin only)
-router.post('/set', async (req, res) => {
+router.post('/set', requireAdmin ,async (req, res) => {
   try {
     const { start_date, end_date } = req.body;
     
     if (!start_date || !end_date) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Start date and end date are required' 
+        message: 'Ημερομηνία έναρξης και λήξης είναι υποχρεωτικές' 
       });
     }
     
@@ -54,16 +62,16 @@ router.post('/set', async (req, res) => {
     if (startDate >= endDate) {
       return res.status(400).json({ 
         success: false, 
-        message: 'End date must be after start date' 
+        message: 'Η ημερομηνία έναρξης πρέπει να είναι πριν από την ημερομηνία λήξης' 
       });
     }
     
     // Deactivate all existing periods
-    await pool.query('UPDATE applications_periods SET is_active = 0');
+    await pool.query('UPDATE application_periods SET is_active = 0');
     
     // Insert new period
     const insertQuery = `
-      INSERT INTO applications_periods (start_date, end_date, is_active, created_at) 
+      INSERT INTO application_periods (start_date, end_date, is_active, created_at) 
       VALUES (?, ?, 1, NOW())
     `;
     
@@ -71,13 +79,13 @@ router.post('/set', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Application period set successfully' 
+      message: 'Η περίοδος υποβολής αιτήσεων έχει οριστεί επιτυχώς' 
     });
   } catch (error) {
-    console.error('Error setting application period:', error);
+    console.error('Σφάλμα ορισμού περιόδου ', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to set application period' 
+      message: 'Σφάλμα κατά τον ορισμό της περιόδου υποβολής αιτήσεων' 
     });
   }
 });
@@ -86,7 +94,7 @@ router.post('/set', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const query = `
-      SELECT * FROM applications_periods 
+      SELECT * FROM application_periods 
       ORDER BY created_at DESC
     `;
     
@@ -95,6 +103,149 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching periods:', error);
     res.status(500).json({ error: 'Failed to fetch periods' });
+  }
+});
+
+
+// Add these new routes:
+// Get all applications (admin only) - matches frontend call
+router.get('/admin/all', requireAdmin, async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        a.id as application_id,
+        u.first_name,
+        u.last_name,
+        u.student_id,
+        a.passed_courses_percent as success_rate,
+        a.average_grade,
+        a.english_level,
+        a.knows_extra_languages as other_languages,
+        a.first_choice_university_id as first_choice,
+        a.second_choice_university_id as second_choice,
+        a.third_choice_university_id as third_choice,
+        u1.university_name as first_choice_name,
+        u2.university_name as second_choice_name,
+        u3.university_name as third_choice_name,
+        a.transcript_file,
+        a.english_certificate_file as english_certificate,
+        a.other_certificates_files as other_certificates,
+        a.is_accepted,
+        a.submitted_at as submission_date
+      FROM applications a
+      JOIN users u ON a.user_id = u.id
+      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
+      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
+      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
+      ORDER BY a.submitted_at DESC
+    `;
+    
+    const [rows] = await pool.query(query);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching applications:', error);
+    res.status(500).json({ error: 'Failed to fetch applications' });
+  }
+});
+
+// Accept applications (admin only)
+router.post('/admin/accept', requireAdmin, async (req, res) => {
+  try {
+    const { applicationIds } = req.body;
+
+    if (!Array.isArray(applicationIds)) {
+      return res.status(400).json({ message: 'Invalid application IDs' });
+    }
+
+    // Reset all applications to not accepted
+    await pool.query('UPDATE applications SET is_accepted = 0');
+
+    // Set selected applications as accepted
+    if (applicationIds.length > 0) {
+      const placeholders = applicationIds.map(() => '?').join(',');
+      const query = `UPDATE applications SET is_accepted = 1 WHERE id IN (${placeholders})`;
+      await pool.query(query, applicationIds);
+    }
+
+    res.json({ message: 'Applications updated successfully' });
+  } catch (error) {
+    console.error('Error updating applications:', error);
+    res.status(500).json({ message: 'Failed to update applications' });
+  }
+});
+
+// Get accepted applications (admin only)
+router.get('/admin/accepted', requireAdmin, async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        a.id as application_id,
+        u.first_name,
+        u.last_name,
+        u.student_id,
+        a.average_grade,
+        a.submitted_at
+      FROM applications a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.is_accepted = 1
+      ORDER BY a.submitted_at DESC
+    `;
+    
+    const [rows] = await pool.query(query);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching accepted applications:', error);
+    res.status(500).json({ error: 'Failed to fetch accepted applications' });
+  }
+});
+
+// Publish results (admin only)
+router.post('/admin/publish', requireAdmin, async (req, res) => {
+  try {
+    // Add any publishing logic here if needed
+    res.json({ message: 'Results published successfully' });
+  } catch (error) {
+    console.error('Error publishing results:', error);
+    res.status(500).json({ message: 'Failed to publish results' });
+  }
+});
+
+// Serve application files (admin only)
+router.get('/file/:applicationId/:fileType', requireAdmin, async (req, res) => {
+  try {
+    const { applicationId, fileType } = req.params;
+    
+    const query = 'SELECT transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?';
+    const [rows] = await pool.query(query, [applicationId]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    let filename;
+    switch (fileType) {
+      case 'transcript':
+        filename = rows[0].transcript_file;
+        break;
+      case 'english':
+        filename = rows[0].english_certificate_file;
+        break;
+      case 'other':
+        filename = rows[0].other_certificates_files;
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid file type' });
+    }
+    
+    if (!filename) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    const filePath = path.join(__dirname, '../uploads', filename);
+    res.download(filePath);
+  } catch (error) {
+    console.error('Error serving file:', error);
+    res.status(500).json({ error: 'Failed to serve file' });
   }
 });
 

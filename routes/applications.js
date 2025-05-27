@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { pool } = require('../config/database');
 const multer = require('multer');
 const path = require('path');
 
@@ -460,6 +460,87 @@ router.post('/publish-results', async (req, res) => {
   } catch (error) {
     console.error('Error publishing results:', error);
     res.status(500).json({ success: false, message: 'Failed to publish results' });
+  }
+});
+
+// Get all applications (admin only)
+router.get('/admin/all', async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'administrator') {
+    return res.status(403).json({ message: 'Not authorized' });
+  }
+  try {
+    const query = `
+      SELECT 
+        a.id,
+        u.first_name,
+        u.last_name,
+        u.student_id,
+        a.passed_courses_percent,
+        a.average_grade,
+        a.english_level,
+        a.knows_extra_languages,
+        u1.university_name as first_choice,
+        u2.university_name as second_choice,
+        u3.university_name as third_choice,
+        a.transcript_file,
+        a.english_certificate_file,
+        a.other_certificates_files,
+        a.terms_accepted,
+        a.is_accepted,
+        a.submitted_at
+      FROM applications a
+      JOIN users u ON a.user_id = u.id
+      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
+      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
+      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
+      ORDER BY a.submitted_at DESC
+    `;
+    const [rows] = await pool.query(query);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching all applications (admin):', error);
+    res.status(500).json({ error: 'Failed to fetch applications' });
+  }
+});
+
+// Get accepted applications (admin only)
+router.get('/admin/accepted', async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'administrator') {
+    return res.status(403).json({ message: 'Not authorized' });
+  }
+  try {
+    const query = `
+      SELECT 
+        a.id,
+        u.first_name,
+        u.last_name,
+        u.student_id,
+        a.passed_courses_percent,
+        a.average_grade,
+        a.english_level,
+        a.knows_extra_languages,
+        u1.university_name as first_choice,
+        u2.university_name as second_choice,
+        u3.university_name as third_choice,
+        a.transcript_file,
+        a.english_certificate_file,
+        a.other_certificates_files,
+        a.terms_accepted,
+        a.is_accepted,
+        a.submitted_at
+      FROM applications a
+      JOIN users u ON a.user_id = u.id
+      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
+      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
+      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
+      WHERE a.is_accepted = 1
+      ORDER BY a.submitted_at DESC
+    `;
+    const [rows] = await pool.query(query);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching accepted applications (admin):', error);
+    res.status(500).json({ error: 'Failed to fetch accepted applications' });
   }
 });
 
