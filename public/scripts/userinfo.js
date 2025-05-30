@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const userInfoBar = document.getElementById('user-info-bar');
     try {
-        const response = await fetch('http://localhost:3000/auth/me', {
+        const response = await fetch('/auth/me', {
             credentials: 'include'
         });
         if (response.ok) {
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
             userInfoBar.style.display = 'flex';
             document.getElementById('logout-btn').onclick = async () => {
-                await fetch('http://localhost:3000/auth/logout', {
+                await fetch('/auth/logout', {
                     method: 'POST',
                     credentials: 'include'
                 });

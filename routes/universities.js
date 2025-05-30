@@ -96,7 +96,7 @@ router.delete('/:id', async (req, res) =>{
         }
 
         const [applications] = await pool.query(
-           'SELECT application_id FROM applications WHERE first_choice = ? OR second_choice =? OR third_choice =?',
+           'SELECT id FROM applications WHERE first_choice_university_id = ? OR second_choice_university_id =? OR third_choice_university_id =?',
             [universityId, universityId, universityId] 
         );
 

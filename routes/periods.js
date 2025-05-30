@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { pool }  = require('../config/database');
 const path = require('path');
 
 const requireAdmin = (req, res, next) => {
-  if (!req.session.user || req.session.user.role !== 'admin') {
+  if (!req.session.user || req.session.user.role !== 'administrator') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();

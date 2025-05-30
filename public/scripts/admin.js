@@ -1,4 +1,3 @@
-const { application } = require("express");
 
 let currentApplications = [];
 let acceptedApplications = [];
@@ -55,7 +54,7 @@ async function loadPeriodStatus() {
 
 async function checkAdminAuth(){
     try {
-        const response = await fetch('/api/auth/check',{
+        const response = await fetch('/api/auth/check', {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -63,18 +62,19 @@ async function checkAdminAuth(){
             }
         });
 
-        if(response.ok){
-           window.location.href = '/';
-           return; 
-        }
-
-        const data = await response.json();
-        if(!data.user || data.user.role !== 'admin'){
+        if (!response.ok) {
             window.location.href = '/';
             return;
         }
+
+        const data = await response.json();
+        if (!data.user || data.user.role !== 'administrator') {
+            window.location.href = '/';
+            return;
+        }
+        // If here, user is administrator: do nothing, allow access
     } catch (error) {
-        console.error("Σφάλμα ελέγχου πιστοποίησης administrator:",error);
+        console.error("Σφάλμα ελέγχου πιστοποίησης administrator:", error);
         window.location.href = 'login.html';
     }
 }
@@ -222,17 +222,18 @@ async function loadApplications() {
     document.getElementById('applications-container').innerHTML = '';
     
     try {
-        // Φόρτωση αιτήσεων
         const response = await fetch('/api/applications/admin/all', {
             method: 'GET',
             credentials: 'include',
-            headers:{
+            headers: {
                 'Content-Type': 'application/json'
             }
         });
         
         if (response.ok) {
-            currentApplications = await response.json();
+            const data = await response.json();
+            currentApplications = Array.isArray(data) ? data : [];
+            console.log('currentApplications:', currentApplications);
             await loadUniversitiesFilter();
             displayApplications(currentApplications);
         } else {
@@ -248,12 +249,10 @@ async function loadApplications() {
 
 function displayApplications(applications){
     const container = document.getElementById('applications-container');
-
-    if(applications.length === 0){
+    if (!Array.isArray(applications) || applications.length === 0) {
         container.innerHTML = '<div class="no-data">Δεν βρέθηκαν αιτήσεις</div>';
         return;
     }
-
     const applicationsHtml = applications.map(app => createApplicationCard(app)).join('');
     container.innerHTML = applicationsHtml;
 }
@@ -488,17 +487,12 @@ async function loadUniversitiesManagement() {
 
 async function loadUniversitiesFilter() {
     try {
-        const response = await fetch('/api/universities', {
-            credentials: 'include'
-        });
-        
+        const response = await fetch('/api/universities', { credentials: 'include' });
         if (response.ok) {
-            const universities = await response.json();
+            const data = await response.json();
+            const universities = Array.isArray(data) ? data : [];
             const select = document.getElementById('university-filter');
-            
-            // Καθαρισμός και προσθήκη επιλογής "Όλα"
             select.innerHTML = '<option value="">Όλα τα Πανεπιστήμια</option>';
-            
             universities.forEach(uni => {
                 const option = document.createElement('option');
                 option.value = uni.university_id;

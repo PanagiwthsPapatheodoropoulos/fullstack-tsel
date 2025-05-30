@@ -9,7 +9,16 @@ router.get('/me', (req, res) => {
     if (!req.session || !req.session.user) {
         return res.status(401).json({ message: 'Not authenticated' });
     }
-    res.json(req.session.user);
+    
+    res.json({
+        id: req.session.user.id,
+        username: req.session.user.username,
+        role: req.session.user.role,
+        first_name: req.session.user.first_name,
+        last_name: req.session.user.last_name,
+        student_id: req.session.user.student_id,
+        email: req.session.user.email
+    });
 });
 
 router.post('/signup', async (req, res) => {
@@ -108,49 +117,65 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    try{
-        if(!username || !password){
+    try {
+        if (!username || !password) {
             return res.status(400).json({ message: 'Όλα τα πεδία είναι υποχρεωτικά' });
         }
 
-        const [users] = await pool.query('SELECT id,username,password,first_name,last_name,role FROM users WHERE username = ?', [username]);  
+        // Updated query to include student_id and email
+        const [users] = await pool.query(
+            'SELECT id, username, password, first_name, last_name, role, student_id, email FROM users WHERE username = ?', 
+            [username]
+        );
 
-        if(users.length === 0){
-            return res.status(401).json({ message: 'Λάθος username ή password.Ο χρήστης αυτός δεν υπάρχει' }); 
-        }
-
-        const user = users[0];
-
-        const passwordMatch = await bcrypt.compare(password, user.password);
-
-        if(!passwordMatch){
+        if (users.length === 0) {
             return res.status(401).json({ message: 'Λάθος username ή password' });
         }
 
-        // Set session
+        const user = users[0];
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
+            return res.status(401).json({ message: 'Λάθος username ή password' });
+        }
+
+        // Set session with all required fields
         req.session.user = {
             id: user.id,
             username: user.username,
-            role: user.role
+            role: user.role,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            student_id: user.student_id,
+            email: user.email
         };
 
+        // Return complete user info
         res.json({
             message: 'Επιτυχής σύνδεση',
             user: {
                 id: user.id,
                 username: user.username,
-                firstName: user.first_name,
-                lastName: user.last_name,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                student_id: user.student_id,
+                email: user.email,
                 role: user.role
             }
         });
-
-    } 
-    catch(error){
-        console.error(`Login error: ${error.message}`);
+    } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: 'Σφάλμα server κατά την είσοδο' });
     }
-})
+});
+
+router.get('/check', (req, res) => {
+    if (!req.session || !req.session.user || req.session.user.role !== 'administrator') {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+    res.json({ user: req.session.user });
+});
+
 
 router.post('/logout', (req, res) => {
     req.session.destroy(() => {

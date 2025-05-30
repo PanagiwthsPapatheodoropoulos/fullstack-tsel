@@ -36,7 +36,12 @@
                 </div>
             </div>
 
-            <form class="application-form">
+            <div class="message-container">
+                <div class="message success" id="application-success"></div>
+                <div class="message error" id="application-error"></div>
+            </div>
+
+            <form class="application-form" id="application-form" onsubmit="return handleApplicationSubmit(event)">
                 <div class="form-section">
                     <h3>Προσωπικά Στοιχεία</h3>
                     <div class="row">
@@ -198,14 +203,14 @@
                             <div class="form-group">
                                 <label>Αναλυτική βαθμολογία <span class="required">*</span></label>
                                 <div class="file-upload">
-                                    <input type="file" id="transcript" name="transcript" class="file-input">
+                                    <input type="file" id="transcript" name="transcript" class="file-input" accept=".pdf,.jpg,.jpeg,.png">
                                     <div class="file-upload-btn">
                                         <span class="file-label">Επιλογή αρχείου</span>
-                                        <span class="file-name">Δεν έχει επιλεγεί αρχείο</span>
+                                        <span class="file-name" id="transcript-filename">Δεν έχει επιλεγεί αρχείο</span>
                                     </div>
                                 </div>
                                 <small class="file-info">Αποδεκτοί τύποι αρχείων: PDF, JPG, PNG. Μέγιστο μέγεθος: 5MB</small>
-                            </div>
+                            </div>  
                         </div>
                     </div>
                     <div class="row">
