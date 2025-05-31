@@ -1,3 +1,5 @@
+//when submitting the application form there were both a success and an error message and the data was saved correctly
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/auth/me', {

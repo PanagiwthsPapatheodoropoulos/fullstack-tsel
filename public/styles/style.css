@@ -1028,6 +1028,61 @@ input[disabled] {
     margin-bottom: 20px;
 }
 
+/* Results page styling */
+.results-container {
+    padding: 20px;
+}
+
+.university-results {
+    margin-bottom: 30px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.university-results h3 {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.accepted-students {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.student-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.student-name {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.student-details {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.student-details .label {
+    font-weight: 500;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-style: italic;
+}
+
 /* responsiveness for tablets and laptops*/
 @media screen and (min-width: 600px) {
     .col-m-1 { width: 8.33%; }

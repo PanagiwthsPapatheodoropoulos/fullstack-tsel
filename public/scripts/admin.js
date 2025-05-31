@@ -1,4 +1,8 @@
-
+//we want to be able to publish the results of the applications
+//γ) Επιλογή για την εμφάνιση όλων των αιτήσεων που έχουν χαρακτηριστεί δεκτές έως εκείνη τη στιγμή και κουμπί για την αν
+// ακοίνωση των αποτελεσμάτων, μέσω του οποίου το περιεχόμενο της σελίδας θα γίνεται διαθέσιμο σε όλους τους χρήστες
+//  (εγγεγραμμένους και μη) μέσω είτε κάποιας υπάρχουσας κοινόχρηστης σελίδας (π.χ. βλ. more.html από την 1η Εργασία) 
+// είτε κάποιας νέας (π.χ. results.html), εφόσον η περίοδος αιτήσεων έχει λήξει.
 let currentApplications = [];
 let acceptedApplications = [];
 let universities = [];
@@ -393,6 +397,7 @@ async function saveAcceptedApplications() {
     }
 }
 
+// In public/scripts/admin.js
 async function publishResults() {
     if (acceptedApplications.length === 0) {
         showMessage('results-error', 'Δεν υπάρχουν δεκτές αιτήσεις για δημοσίευση');
@@ -400,16 +405,46 @@ async function publishResults() {
     }
     
     try {
-        const response = await fetch('/api/applications/admin/publish', {
-            method: 'POST',
+        // First check period status
+        const periodResponse = await fetch('/api/periods/current', {
             credentials: 'include'
         });
         
-        if (response.ok) {
+        if (!periodResponse.ok) {
+            showMessage('results-error', 'Σφάλμα ελέγχου περιόδου αιτήσεων');
+            return;
+        }
+
+        const periodData = await periodResponse.json();
+        if (!periodData.period) {
+            showMessage('results-error', 'Δεν βρέθηκε ενεργή περίοδος αιτήσεων');
+            return;
+        }
+
+        // Try to publish results
+        const response = await fetch('/api/applications/publish-results', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
             showMessage('results-success', 'Τα αποτελέσματα δημοσιεύτηκαν επιτυχώς');
+            // Redirect to results page after success
+            setTimeout(() => {
+                window.location.href = 'results.html';
+            }, 2000);
         } else {
-            const error = await response.json();
-            showMessage('results-error', error.message || 'Σφάλμα δημοσίευσης');
+            const message = data.message || 'Σφάλμα δημοσίευσης';
+            if (data.daysRemaining) {
+                showMessage('results-error', `${message} (Απομένουν ${data.daysRemaining} ημέρες)`);
+            } else {
+                showMessage('results-error', message);
+            }
         }
     } catch (error) {
         console.error('Σφάλμα δημοσίευσης:', error);

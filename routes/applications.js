@@ -15,17 +15,18 @@ if (!fs.existsSync(uploadDir)) {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+        // Double-check directory exists
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        // Get user ID from request
         const userId = req.body.user_id;
-        // Get file type from fieldname
         const fileType = file.fieldname.replace('_file', '');
-        // Get file extension
         const ext = path.extname(file.originalname);
-        // Create unique filename using userId and fileType
-        const filename = `${fileType}_${userId}${ext}`;
+        // Create unique filename that won't conflict
+        const filename = `${fileType}_${userId}_${Date.now()}${ext}`;
         cb(null, filename);
     }
 });
@@ -44,8 +45,29 @@ const upload = multer({
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB limit
     }
-});
+}).fields([
+    { name: 'transcript_file', maxCount: 1 },
+    { name: 'english_certificate_file', maxCount: 1 },
+    { name: 'other_certificates_files', maxCount: 5 }
+]);
 
+// Wrap multer error handling
+const uploadMiddleware = (req, res, next) => {
+    upload(req, res, function(err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(400).json({ 
+                error: 'File upload error', 
+                details: err.message 
+            });
+        } else if (err) {
+            return res.status(500).json({ 
+                error: 'Server error during file upload', 
+                details: err.message 
+            });
+        }
+        next();
+    });
+};
 
 // Get all applications (admin only)
 router.get('/', async (req, res) => {
@@ -286,97 +308,110 @@ router.get('/user/:userId', async (req, res) => {
 
 
 // Submit application
-router.post('/', upload.fields([
-  { name: 'transcript_file', maxCount: 1 },
-  { name: 'english_certificate_file', maxCount: 1 },
-  { name: 'other_certificates_files', maxCount: 5 }
-]), async (req, res) => {
-  try {
-    // Log incoming request data for debugging
-    console.log('Request body:', req.body);
-    console.log('Request files:', req.files);
-
-    // Validate file uploads first
-    if (!req.files || !req.files['transcript_file'] || !req.files['english_certificate_file']) {
-      return res.status(400).json({ error: 'Missing required files' });
-    }
-
-    const {
-      user_id,
-      passed_courses_percent,
-      average_grade,
-      english_level,
-      knows_extra_languages,
-      first_choice_university_id,
-      second_choice_university_id,
-      third_choice_university_id,
-      terms_accepted
-    } = req.body;
-
+router.post('/', uploadMiddleware, async (req, res) => {
     try {
-      // Check if application period is active - Fix the table name
-      const [periodRows] = await pool.query(`
-        SELECT * FROM application_periods 
-        WHERE is_active = 1 AND CURDATE() BETWEEN start_date AND end_date
-      `);
-      
-      if (periodRows.length === 0) {
-        return res.status(400).json({ error: 'Application period is not active' });
-      }
+        // Log incoming request data for debugging
+        console.log('Request body:', req.body);
+        console.log('Request files:', req.files);
 
-      // Check if user already has an application
-      const [existing] = await pool.query('SELECT id FROM applications WHERE user_id = ?', [user_id]);
-      
-      if (existing.length > 0) {
-        return res.status(400).json({ error: 'User already has an application' });
-      }
+        // Validate file uploads first
+        if (!req.files || !req.files['transcript_file'] || !req.files['english_certificate_file']) {
+            return res.status(400).json({ error: 'Missing required files' });
+        }
 
-      // Process file uploads
-      const transcriptFile = req.files['transcript_file'][0].filename;
-      const englishFile = req.files['english_certificate_file'][0].filename;
-      const otherFiles = req.files['other_certificates_files'] ? 
-        JSON.stringify(req.files['other_certificates_files'].map(file => file.filename)) : null;
+        const {
+            user_id,
+            passed_courses_percent,
+            average_grade,
+            english_level,
+            knows_extra_languages,
+            first_choice_university_id,
+            second_choice_university_id,
+            third_choice_university_id,
+            terms_accepted
+        } = req.body;
 
-      // Insert application
-      const [result] = await pool.query(`
-        INSERT INTO applications (
-          user_id, passed_courses_percent, average_grade, english_level,
-          knows_extra_languages, first_choice_university_id, second_choice_university_id,
-          third_choice_university_id, transcript_file, english_certificate_file,
-          other_certificates_files, terms_accepted, submitted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `, [
-        parseInt(user_id),
-        parseFloat(passed_courses_percent),
-        parseFloat(average_grade),
-        english_level,
-        knows_extra_languages === 'true' ? 1 : 0,
-        parseInt(first_choice_university_id),
-        second_choice_university_id ? parseInt(second_choice_university_id) : null,
-        third_choice_university_id ? parseInt(third_choice_university_id) : null,
-        transcriptFile,
-        englishFile,
-        otherFiles,
-        terms_accepted === 'true' ? 1 : 0
-      ]);
+        // Cleanup function for error handling
+        const cleanup = (files) => {
+            Object.values(files).flat().forEach(file => {
+                if (file.path && fs.existsSync(file.path)) {
+                    fs.unlinkSync(file.path);
+                }
+            });
+        };
 
-      res.status(201).json({
-        message: 'Application submitted successfully',
-        applicationId: result.insertId
-      });
+        try {
+            // Check if application period is active
+            const [periodRows] = await pool.query(`
+                SELECT * FROM application_periods 
+                WHERE is_active = 1 AND CURDATE() BETWEEN start_date AND end_date
+            `);
+            
+            if (periodRows.length === 0) {
+                cleanup(req.files);
+                return res.status(400).json({ error: 'Application period is not active' });
+            }
 
-    } catch (dbError) {
-      console.error('Database error:', dbError);
-      throw dbError;
+            // Check if user already has an application
+            const [existing] = await pool.query('SELECT id FROM applications WHERE user_id = ?', [user_id]);
+            
+            if (existing.length > 0) {
+                cleanup(req.files);
+                return res.status(400).json({ error: 'User already has an application' });
+            }
+
+            // Process file uploads
+            const transcriptFile = req.files['transcript_file'][0].filename;
+            const englishFile = req.files['english_certificate_file'][0].filename;
+            const otherFiles = req.files['other_certificates_files'] ? 
+                JSON.stringify(req.files['other_certificates_files'].map(file => file.filename)) : null;
+
+            // Insert application
+            const [result] = await pool.query(`
+                INSERT INTO applications (
+                    user_id, passed_courses_percent, average_grade, english_level,
+                    knows_extra_languages, first_choice_university_id, second_choice_university_id,
+                    third_choice_university_id, transcript_file, english_certificate_file,
+                    other_certificates_files, terms_accepted, submitted_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            `, [
+                parseInt(user_id),
+                parseFloat(passed_courses_percent),
+                parseFloat(average_grade),
+                english_level,
+                knows_extra_languages === 'true' ? 1 : 0,
+                parseInt(first_choice_university_id),
+                second_choice_university_id ? parseInt(second_choice_university_id) : null,
+                third_choice_university_id ? parseInt(third_choice_university_id) : null,
+                transcriptFile,
+                englishFile,
+                otherFiles,
+                terms_accepted === 'true' ? 1 : 0
+            ]);
+
+            return res.status(201).json({
+                message: 'Application submitted successfully',
+                applicationId: result.insertId
+            });
+
+        } catch (dbError) {
+            // Clean up files if database operation fails
+            cleanup(req.files);
+            console.error('Database error:', dbError);
+            throw dbError;
+        }
+
+    } catch (error) {
+        // Clean up any uploaded files on error
+        if (req.files) {
+            cleanup(req.files);
+        }
+        console.error('Error submitting application:', error);
+        res.status(500).json({ 
+            error: 'Failed to submit application',
+            details: error.message 
+        });
     }
-
-  } catch (error) {
-    console.error('Error submitting application:', error);
-    res.status(500).json({ 
-      error: 'Failed to submit application',
-      details: error.message 
-    });
-  }
 });
 
 // Update application acceptance status (admin only)
@@ -457,33 +492,68 @@ router.get('/stats', async (req, res) => {
 });
 
 
+// In routes/applications.js
 router.post('/publish-results', async (req, res) => {
-  try {
-    // Check if application period has ended
-    const periodQuery = `
-      SELECT * FROM applications_periods 
-      WHERE is_active = 1 AND CURDATE() > end_date
-    `;
-    const [periodRows] = await pool.query(periodQuery);
-    
-    if (periodRows.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Cannot publish results - application period is still active or no active period found' 
-      });
-    }
+    try {
+        // Get current date in YYYY-MM-DD format
+        const currentDate = new Date().toISOString().split('T')[0];
+        
+        // Check if application period exists and has ended
+        const periodQuery = `
+            SELECT *, DATE(end_date) as end_date_only
+            FROM application_periods 
+            WHERE is_active = 1
+        `;
+        
+        const [periodRows] = await pool.query(periodQuery);
+        
+        // Debug logging
+        console.log('Publishing results check:', {
+            currentDate,
+            periodData: periodRows[0],
+            endDate: periodRows[0]?.end_date_only
+        });
 
-    // You can add logic here to create a results page or update a results table
-    // For now, just return success
-    res.json({ 
-      success: true, 
-      message: 'Results published successfully' 
-    });
-  } catch (error) {
-    console.error('Error publishing results:', error);
-    res.status(500).json({ success: false, message: 'Failed to publish results' });
-  }
+        if (periodRows.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'No active application period found' 
+            });
+        }
+
+        // Compare dates as strings in YYYY-MM-DD format
+        if (currentDate <= periodRows[0].end_date_only) {
+            const daysRemaining = Math.ceil(
+                (new Date(periodRows[0].end_date) - new Date()) / (1000 * 60 * 60 * 24)
+            );
+            
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cannot publish results - application period is still active',
+                currentDate,
+                endDate: periodRows[0].end_date_only,
+                daysRemaining
+            });
+        }
+
+        // Simply set is_active to 0 to indicate results are published
+        await pool.query('UPDATE application_periods SET is_active = 0 WHERE is_active = 1');
+
+        res.json({ 
+            success: true, 
+            message: 'Results published successfully' 
+        });
+
+    } catch (error) {
+        console.error('Error publishing results:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to publish results',
+            error: error.message
+        });
+    }
 });
+
 
 // Get all applications (admin only)
 router.get('/admin/all', async (req, res) => {
@@ -612,7 +682,6 @@ router.get('/file/:applicationId/:fileType', async (req, res) => {
     try {
         const { applicationId, fileType } = req.params;
         
-        // Get file path from database
         const query = 'SELECT transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?';
         const [rows] = await pool.query(query, [applicationId]);
         
@@ -629,19 +698,20 @@ router.get('/file/:applicationId/:fileType', async (req, res) => {
                 filePath = path.join(uploadDir, rows[0].english_certificate_file);
                 break;
             case 'other':
-                // Handle multiple files if needed
                 filePath = path.join(uploadDir, rows[0].other_certificates_files);
                 break;
             default:
                 return res.status(400).json({ error: 'Invalid file type' });
         }
 
-        // Check if file exists
+        // Verify file exists
         if (!fs.existsSync(filePath)) {
             return res.status(404).json({ error: 'File not found' });
         }
 
-        // Send file
+        // Send file with proper headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline');
         res.sendFile(filePath);
 
     } catch (error) {

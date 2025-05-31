@@ -1,3 +1,6 @@
+//TODO: When submitting the form a second time it crushes
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('.eligibility-form');
     form.addEventListener('submit', checkEligibility);
