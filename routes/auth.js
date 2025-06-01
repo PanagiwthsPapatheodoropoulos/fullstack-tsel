@@ -21,99 +21,6 @@ router.get('/me', (req, res) => {
     });
 });
 
-router.post('/signup', async (req, res) => {
-    const { 
-        firstName, 
-        lastName, 
-        studentId, 
-        phone, 
-        email, 
-        username, 
-        password,
-        confirmPassword 
-    } = req.body;
-
-    try{
-
-        
-        if(!firstName || !lastName || !studentId || !phone || !email || !username || !password || !confirmPassword) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
-
-        if(password !== confirmPassword) {
-            return res.status(400).json({ message: 'Passwords do not match' });
-        }
-
-        if (/\d/.test(lastName)) {
-                return res.status(400).json({ error: 'Το επίθετο δεν πρέπει να περιέχει ψηφία' });
-        }
-
-        // Validate student ID (13 digits, starting with 2022)
-        if (!/^2022\d{9}$/.test(studentId)) {
-            return res.status(400).json({ error: 'Ο αριθμός μητρώου πρέπει να αποτελείται από 13 ψηφία και να ξεκινά από 2022' });
-        }
-
-        // Validate phone (exactly 10 digits)
-        if (!/^\d{10}$/.test(phone)) {
-            return res.status(400).json({ error: 'Το τηλέφωνο πρέπει να αποτελείται από ακριβώς 10 ψηφία' });
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Μη έγκυρη διεύθυνση email' });
-        }
-
-        // Validate password (at least 5 characters, at least one symbol)
-        if (password.length < 5) {
-            return res.status(400).json({ error: 'Ο κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 5 χαρακτήρες' });
-        }
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-            return res.status(400).json({ error: 'Ο κωδικός πρόσβασης πρέπει να περιέχει τουλάχιστον ένα σύμβολο' });
-        }
-
-        const [existingUsers]= await pool.query('SELECT id FROM users WHERE username = ?', [username]);
-
-        if(existingUsers.length > 0 ){
-            return res.status(400).json({ message: 'Το username υπάρχει ήδη' });
-        }
-
-        const [existingEmails] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-
-        if(existingEmails.length > 0 ){
-            return res.status(400).json({ message: 'Το email υπάρχει ήδη' });
-        }
-
-        const [existingStudentIds] = await pool.query('SELECT id FROM users WHERE student_Id =?', [studentId]);
-
-        if(existingStudentIds.length > 0 ){
-            return res.status(400).json({ message: 'Το studentId υπάρχει ήδη' });
-        }
-
-        const [existingPhones] = await pool.query('SELECT id FROM users WHERE phone =?', [phone]);
-
-        if(existingPhones.length > 0 ){
-            return res.status(400).json({ message: 'Το κινητό υπάρχει ήδη' });
-        }
-
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password,saltRounds);
-
-        const [result] = await pool.query(
-            'INSERT INTO users (username, password, first_name, last_name, student_id, phone, email, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [username, hashedPassword, firstName, lastName, studentId, phone, email,'registered'] 
-        );
-
-        res.status(201).json({ message: 'Εγγραφή χρήστη ολοκληρώθηκε επιτυχώς', userId: result.insertId });
-
-
-    }
-    catch(error){
-        console.error(`Signup error: ${error.message}`);
-        res.status(500).json({ message: 'Σφάλμα server κατά την εγγραφή' });
-    }
-    
-})
-
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -169,6 +76,88 @@ router.post('/login', async (req, res) => {
     }
 });
 
+
+
+router.post('/signup', async (req, res) => {
+    const { 
+        firstName, 
+        lastName, 
+        studentId, 
+        phone, 
+        email, 
+        username, 
+        password,
+        confirmPassword 
+    } = req.body;
+
+    try {
+        if(!firstName || !lastName || !studentId || !phone || !email || !username || !password || !confirmPassword) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        if(password !== confirmPassword) {
+            return res.status(400).json({ message: 'Passwords do not match' });
+        }
+
+        // Validate name
+        if (/\d/.test(firstName) || /\d/.test(lastName)) {
+            return res.status(400).json({ error: 'Το όνομα και επίθετο δεν πρέπει να περιέχουν ψηφία' });
+        }
+
+        // Validate student ID
+        if (!/^2022\d{9}$/.test(studentId)) {
+            return res.status(400).json({ error: 'Ο αριθμός μητρώου πρέπει να αποτελείται από 13 ψηφία και να ξεκινά από 2022' });
+        }
+
+        // Validate phone
+        if (!/^\d{10}$/.test(phone)) {
+            return res.status(400).json({ error: 'Το τηλέφωνο πρέπει να αποτελείται από ακριβώς 10 ψηφία' });
+        }
+
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: 'Μη έγκυρη διεύθυνση email' });
+        }
+
+        // Check existing users
+        const [existingUsers] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+        if(existingUsers.length > 0) {
+            return res.status(400).json({ message: 'Το username υπάρχει ήδη' });
+        }
+
+        const [existingEmails] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+        if(existingEmails.length > 0) {
+            return res.status(400).json({ message: 'Το email υπάρχει ήδη' });
+        }
+
+        const [existingStudentIds] = await pool.query('SELECT id FROM users WHERE student_id = ?', [studentId]);
+        if(existingStudentIds.length > 0) {
+            return res.status(400).json({ message: 'Το studentId υπάρχει ήδη' });
+        }
+
+        const [existingPhones] = await pool.query('SELECT id FROM users WHERE phone = ?', [phone]);
+        if(existingPhones.length > 0) {
+            return res.status(400).json({ message: 'Το κινητό υπάρχει ήδη' });
+        }
+
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const [result] = await pool.query(
+            'INSERT INTO users (username, password, first_name, last_name, student_id, phone, email, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [username, hashedPassword, firstName, lastName, studentId, phone, email, 'registered']
+        );
+
+        res.status(201).json({ message: 'Εγγραφή χρήστη ολοκληρώθηκε επιτυχώς', userId: result.insertId });
+
+    } catch(error) {
+        console.error('Signup error:', error);
+        res.status(500).json({ message: 'Σφάλμα server κατά την εγγραφή' });
+    }
+});
+
+
 router.get('/check', (req, res) => {
     if (!req.session || !req.session.user || req.session.user.role !== 'administrator') {
         return res.status(403).json({ message: 'Not authorized' });
@@ -183,5 +172,23 @@ router.post('/logout', (req, res) => {
         res.json({ message: 'Logged out' });
     });
 });
+
+router.post('/check-username', async (req, res) => {
+    const { username } = req.body;
+
+    try {
+        if (!username) {
+            return res.status(400).json({ message: 'Username is required' });
+        }
+
+        const [existingUsers] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+        
+        res.json({ exists: existingUsers.length > 0 });
+    } catch (error) {
+        console.error('Username check error:', error);
+        res.status(500).json({ message: 'Server error checking username' });
+    }
+});
+
 
 module.exports = router;

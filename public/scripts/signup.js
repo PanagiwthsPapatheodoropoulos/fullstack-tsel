@@ -80,6 +80,199 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Validation functions
+function validateName(name, fieldName) {
+    if (!name || name.trim() === '') {
+        return `Το ${fieldName} είναι υποχρεωτικό`;
+    }
+    if (/\d/.test(name)) {
+        return `Το ${fieldName} δεν πρέπει να περιέχει ψηφία`;
+    }
+    return null;
+}
+
+function validateStudentId(studentId) {
+    if (!studentId || studentId.trim() === '') {
+        return 'Ο αριθμός μητρώου είναι υποχρεωτικός';
+    }
+    if (!/^\d{13}$/.test(studentId)) {
+        return 'Ο αριθμός μητρώου πρέπει να αποτελείται από ακριβώς 13 ψηφία';
+    }
+    if (!studentId.startsWith('2022')) {
+        return 'Ο αριθμός μητρώου πρέπει να ξεκινά από 2022';
+    }
+    return null;
+}
+
+function validatePhone(phone) {
+    if (!phone || phone.trim() === '') {
+        return 'Το τηλέφωνο είναι υποχρεωτικό';
+    }
+    if (!/^\d{10}$/.test(phone)) {
+        return 'Το τηλέφωνο πρέπει να αποτελείται από ακριβώς 10 ψηφία';
+    }
+    return null;
+}
+
+function validateEmail(email) {
+    if (!email || email.trim() === '') {
+        return 'Το email είναι υποχρεωτικό';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return 'Μη έγκυρη διεύθυνση email';
+    }
+    return null;
+}
+
+function validateUsername(username) {
+    if (!username || username.trim() === '') {
+        return 'Το όνομα χρήστη είναι υποχρεωτικό';
+    }
+    return null;
+}
+
+function validatePassword(password) {
+    if (!password) {
+        return 'Ο κωδικός πρόσβασης είναι υποχρεωτικός';
+    }
+    if (password.length < 5) {
+        return 'Ο κωδικός πρόσβασης πρέπει να αποτελείται από τουλάχιστον 5 χαρακτήρες';
+    }
+    // Check for at least one special character
+    const specialCharRegex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/;
+    if (!specialCharRegex.test(password)) {
+        return 'Ο κωδικός πρόσβασης πρέπει να περιέχει τουλάχιστον έναν ειδικό χαρακτήρα (π.χ. !, #, $)';
+    }
+    return null;
+}
+
+function validateConfirmPassword(password, confirmPassword) {
+    if (!confirmPassword) {
+        return 'Η επιβεβαίωση κωδικού είναι υποχρεωτική';
+    }
+    if (password !== confirmPassword) {
+        return 'Οι κωδικοί πρόσβασης δεν ταιριάζουν';
+    }
+    return null;
+}
+
+// Check if username already exists (asynchronous validation)
+async function checkUsernameExists(username) {
+    try {
+        const response = await fetch('/auth/check-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.exists;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error checking username:', error);
+        return false;
+    }
+}
+
+// Real-time validation
+function setupRealTimeValidation() {
+    const fields = [
+        { id: 'firstname', validator: (value) => validateName(value, 'όνομα') },
+        { id: 'lastname', validator: (value) => validateName(value, 'επίθετο') },
+        { id: 'reg_number', validator: validateStudentId },
+        { id: 'phone', validator: validatePhone },
+        { id: 'email', validator: validateEmail },
+        { id: 'username', validator: validateUsername },
+        { id: 'password', validator: validatePassword },
+        { id: 'confirm_password', validator: (value) => {
+            const password = document.getElementById('password').value;
+            return validateConfirmPassword(password, value);
+        }}
+    ];
+
+    fields.forEach(field => {
+        const element = document.getElementById(field.id);
+        if (element) {
+            element.addEventListener('blur', () => {
+                const error = field.validator(element.value);
+                showFieldError(field.id, error);
+            });
+
+            // Clear error on input
+            element.addEventListener('input', () => {
+                clearFieldError(field.id);
+            });
+        }
+    });
+
+    // Special handling for username with async validation
+    const usernameField = document.getElementById('username');
+    if (usernameField) {
+        let timeoutId;
+        usernameField.addEventListener('input', () => {
+            clearTimeout(timeoutId);
+            clearFieldError('username');
+            
+            timeoutId = setTimeout(async () => {
+                const username = usernameField.value.trim();
+                if (username) {
+                    const basicError = validateUsername(username);
+                    if (!basicError) {
+                        const exists = await checkUsernameExists(username);
+                        if (exists) {
+                            showFieldError('username', 'Το όνομα χρήστη υπάρχει ήδη');
+                        }
+                    }
+                }
+            }, 500); // Debounce for 500ms
+        });
+    }
+}
+
+function showFieldError(fieldId, errorMessage) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+
+    // Remove existing error
+    clearFieldError(fieldId);
+
+    if (errorMessage) {
+        // Add error class to field
+        field.classList.add('error');
+        
+        // Create error message element
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error';
+        errorDiv.textContent = errorMessage;
+        errorDiv.style.cssText = `
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        `;
+        
+        // Insert error message after the field
+        field.parentNode.appendChild(errorDiv);
+    }
+}
+
+function clearFieldError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+
+    field.classList.remove('error');
+    const errorDiv = field.parentNode.querySelector('.field-error');
+    if (errorDiv) {
+        errorDiv.remove();
+    }
+}
+
 async function handleSignup(event) {
     event.preventDefault();
     
@@ -94,9 +287,95 @@ async function handleSignup(event) {
     const confirmPassword = document.getElementById('confirm_password').value;
     const terms = document.getElementById('terms').checked;
 
-    // Validation
+    // Clear all previous errors
+    const fieldIds = ['firstname', 'lastname', 'reg_number', 'phone', 'email', 'username', 'password', 'confirm_password'];
+    fieldIds.forEach(clearFieldError);
+
+    // Validate all fields
+    const errors = [];
+    let hasErrors = false;
+
+    // Validate first name
+    const firstNameError = validateName(firstName, 'όνομα');
+    if (firstNameError) {
+        showFieldError('firstname', firstNameError);
+        errors.push(firstNameError);
+        hasErrors = true;
+    }
+
+    // Validate last name
+    const lastNameError = validateName(lastName, 'επίθετο');
+    if (lastNameError) {
+        showFieldError('lastname', lastNameError);
+        errors.push(lastNameError);
+        hasErrors = true;
+    }
+
+    // Validate student ID
+    const studentIdError = validateStudentId(studentId);
+    if (studentIdError) {
+        showFieldError('reg_number', studentIdError);
+        errors.push(studentIdError);
+        hasErrors = true;
+    }
+
+    // Validate phone
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+        showFieldError('phone', phoneError);
+        errors.push(phoneError);
+        hasErrors = true;
+    }
+
+    // Validate email
+    const emailError = validateEmail(email);
+    if (emailError) {
+        showFieldError('email', emailError);
+        errors.push(emailError);
+        hasErrors = true;
+    }
+
+    // Validate username
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+        showFieldError('username', usernameError);
+        errors.push(usernameError);
+        hasErrors = true;
+    } else {
+        // Check if username exists
+        const usernameExists = await checkUsernameExists(username);
+        if (usernameExists) {
+            showFieldError('username', 'Το όνομα χρήστη υπάρχει ήδη');
+            errors.push('Το όνομα χρήστη υπάρχει ήδη');
+            hasErrors = true;
+        }
+    }
+
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+        showFieldError('password', passwordError);
+        errors.push(passwordError);
+        hasErrors = true;
+    }
+
+    // Validate confirm password
+    const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
+    if (confirmPasswordError) {
+        showFieldError('confirm_password', confirmPasswordError);
+        errors.push(confirmPasswordError);
+        hasErrors = true;
+    }
+
+    // Check terms
     if (!terms) {
         showMessage('error', 'Πρέπει να αποδεχτείτε τους όρους χρήσης');
+        hasErrors = true;
+    }
+
+    // If there are validation errors, don't proceed
+    if (hasErrors) {
+        showMessage('error', 'Παρακαλώ διορθώστε τα σφάλματα στη φόρμα');
         return;
     }
 
@@ -113,11 +392,12 @@ async function handleSignup(event) {
     };
 
     try {
-        const response = await fetch('/api/auth/signup', {
+        const response = await fetch('/auth/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include', 
             body: JSON.stringify(requestBody)
         });
 
@@ -130,6 +410,7 @@ async function handleSignup(event) {
                 window.location.href = 'login.html';
             }, 2000);
         } else {
+            // Handle server-side errors (fallback)
             showMessage('error', data.error || data.message || 'Σφάλμα κατά την εγγραφή');
         }
     } catch (error) {
@@ -152,6 +433,16 @@ function showMessage(type, message) {
     const messageElement = document.createElement('div');
     messageElement.className = `message ${type}`;
     messageElement.textContent = message;
+    messageElement.style.cssText = `
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid;
+        border-radius: 4px;
+        ${type === 'success' ? 
+            'background-color: #d4edda; color: #155724; border-color: #c3e6cb;' : 
+            'background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;'
+        }
+    `;
 
     // Clear previous messages
     messageDiv.innerHTML = '';
@@ -163,8 +454,7 @@ function showMessage(type, message) {
     }, 5000);
 }
 
-
-// imhor1zon 123papathe!
-//GKOTSIGANG 123pap!
-// admin admin123!
-// MPAMPAS_HLIANAS hliana123!
+// Initialize real-time validation when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupRealTimeValidation();
+});

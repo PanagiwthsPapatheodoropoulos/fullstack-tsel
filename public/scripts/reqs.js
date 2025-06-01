@@ -92,6 +92,6 @@ function showMessage(elementId, message, type = 'info') {
 
         setTimeout(() => {
             element.style.display = 'none';
-        }, 5000);
+        }, 10000);
     }
 }

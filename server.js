@@ -5,7 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const session = require('express-session');
 
-
+// Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const applicationRoutes = require('./routes/applications');
@@ -16,23 +16,21 @@ const PORT = process.env.PORT || 3000;
 
 // CORS
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:5500',
-        'http://127.0.0.1:5500'
-    ],
-    credentials: true
+    origin: ['http://localhost:3000', 'http://localhost:5500'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type']
 }));
 
 
 app.use(session({
-    secret: 'u7$2kL!9pQz@1vX4eR6wT0bN8sF3cJ5h', // secret key for signing the session ID cookie
+    secret: 'u7$2kL!9pQz@1vX4eR6wT0bN8sF3cJ5h',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false,      // true if using HTTPS
-        sameSite: 'lax'
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
 
@@ -47,6 +45,8 @@ app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
 });
+
+// Mount routes
 app.use('/auth', authRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
