@@ -414,6 +414,64 @@ router.post('/', uploadMiddleware, async (req, res) => {
     }
 });
 
+router.delete('/:id', async (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'administrator') {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    try {
+        const applicationId = parseInt(req.params.id);
+        const uploadsDir = path.join(__dirname, '..', 'uploads');
+        
+        // Get all files from the application
+        const [applications] = await pool.query(
+            'SELECT transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?', 
+            [applicationId]
+        );
+
+        if (applications.length === 0) {
+            return res.status(404).json({ message: 'Application not found' });
+        }
+
+        const application = applications[0];
+
+        // Get all files in uploads directory
+        const allFiles = fs.readdirSync(uploadsDir);
+        
+        // Find files related to this application
+        const relatedFiles = allFiles.filter(filename => {
+            return filename.includes(`_${applicationId}_`) || 
+                   filename === application.transcript_file || 
+                   filename === application.english_certificate_file ||
+                   (application.other_certificates_files && 
+                    application.other_certificates_files.includes(filename));
+        });
+
+        // Delete the files
+        relatedFiles.forEach(filename => {
+            const filePath = path.join(uploadsDir, filename);
+            try {
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (err) {
+                console.warn(`Failed to delete file ${filename}:`, err);
+            }
+        });
+
+        // Delete the application from database
+        await pool.query('DELETE FROM applications WHERE id = ?', [applicationId]);
+
+        res.json({ 
+            message: 'Application deleted successfully',
+            deletedFiles: relatedFiles
+        });
+
+    } catch (error) {
+        console.error('Error deleting application:', error);
+        res.status(500).json({ message: 'Failed to delete application' });
+    }
+});
 // Update application acceptance status (admin only)
 router.put('/:id/acceptance', async (req, res) => {
   try {
@@ -495,60 +553,55 @@ router.get('/stats', async (req, res) => {
 // In routes/applications.js
 router.post('/publish-results', async (req, res) => {
     try {
-        // Get current date in YYYY-MM-DD format
-        const currentDate = new Date().toISOString().split('T')[0];
-        
-        // Check if application period exists and has ended
-        const periodQuery = `
+        // Check if period exists and is inactive
+        const [periodRows] = await pool.query(`
             SELECT *, DATE(end_date) as end_date_only
             FROM application_periods 
-            WHERE is_active = 1
-        `;
-        
-        const [periodRows] = await pool.query(periodQuery);
-        
-        // Debug logging
-        console.log('Publishing results check:', {
-            currentDate,
-            periodData: periodRows[0],
-            endDate: periodRows[0]?.end_date_only
-        });
+            WHERE is_active = 0
+            ORDER BY end_date DESC
+            LIMIT 1
+        `);
 
         if (periodRows.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'No active application period found' 
+            return res.status(400).json({
+                success: false,
+                message: 'Δεν βρέθηκε ολοκληρωμένη περίοδος αιτήσεων'
             });
         }
 
-        // Compare dates as strings in YYYY-MM-DD format
-        if (currentDate <= periodRows[0].end_date_only) {
-            const daysRemaining = Math.ceil(
-                (new Date(periodRows[0].end_date) - new Date()) / (1000 * 60 * 60 * 24)
-            );
-            
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Cannot publish results - application period is still active',
-                currentDate,
-                endDate: periodRows[0].end_date_only,
-                daysRemaining
+        // Check if we have any accepted applications
+        const [acceptedCheck] = await pool.query(
+            'SELECT COUNT(*) as count FROM applications WHERE is_accepted = 1'
+        );
+
+        if (acceptedCheck[0].count === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Δεν υπάρχουν δεκτές αιτήσεις για δημοσίευση'
             });
         }
 
-        // Simply set is_active to 0 to indicate results are published
-        await pool.query('UPDATE application_periods SET is_active = 0 WHERE is_active = 1');
+        // Get accepted applications for this period
+        const [acceptedApplications] = await pool.query(`
+            SELECT a.*, u.first_name, u.last_name, u.student_id
+            FROM applications a
+            JOIN users u ON a.user_id = u.id
+            WHERE a.is_accepted = 1 
+            AND a.submitted_at BETWEEN ? AND ?
+            ORDER BY a.average_grade DESC
+        `, [periodRows[0].start_date, periodRows[0].end_date]);
 
         res.json({ 
             success: true, 
-            message: 'Results published successfully' 
+            message: 'Τα αποτελέσματα δημοσιεύτηκαν επιτυχώς',
+            results: acceptedApplications
         });
 
     } catch (error) {
         console.error('Error publishing results:', error);
         res.status(500).json({ 
-            success: false, 
-            message: 'Failed to publish results',
+            success: false,
+            message: 'Σφάλμα κατά τη δημοσίευση των αποτελεσμάτων',
             error: error.message
         });
     }
@@ -678,9 +731,10 @@ router.get('/admin/accepted', async (req, res) => {
 
 
 // Add this endpoint to serve files
-router.get('/file/:applicationId/:fileType', async (req, res) => {
+router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
     try {
-        const { applicationId, fileType } = req.params;
+        const { applicationId, fileType, index = 0 } = req.params;
+        const uploadsDir = path.join(__dirname, '..', 'uploads');
         
         const query = 'SELECT transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?';
         const [rows] = await pool.query(query, [applicationId]);
@@ -692,31 +746,88 @@ router.get('/file/:applicationId/:fileType', async (req, res) => {
         let filePath;
         switch(fileType) {
             case 'transcript':
-                filePath = path.join(uploadDir, rows[0].transcript_file);
+                filePath = path.join(uploadsDir, rows[0].transcript_file);
                 break;
             case 'english':
-                filePath = path.join(uploadDir, rows[0].english_certificate_file);
+                filePath = path.join(uploadsDir, rows[0].english_certificate_file);
                 break;
             case 'other':
-                filePath = path.join(uploadDir, rows[0].other_certificates_files);
+                const allFiles = fs.readdirSync(uploadsDir);
+
+                let otherFiles;
+                try {
+                    otherFiles = rows[0].other_certificates_files;
+                    if (typeof otherFiles === 'string') {
+                        otherFiles = JSON.parse(otherFiles);
+                    }
+                    if (!Array.isArray(otherFiles)) {
+                        otherFiles = [otherFiles];
+                    }
+                } catch (e) {
+                    otherFiles = [];
+                }
+
+                const otherCertFiles = allFiles.filter(file => 
+                    otherFiles.includes(file)
+                );
+
+                if (otherCertFiles.length === 0) {
+                    return res.status(404).json({ error: 'No other certificates found' });
+                }
+
+                const fileIndex = parseInt(index);
+                if (fileIndex >= otherCertFiles.length) {
+                    return res.status(404).json({ 
+                        error: 'Certificate index out of range',
+                        available: otherCertFiles.length
+                    });
+                }
+
+                filePath = path.join(uploadsDir, otherCertFiles[fileIndex]);
                 break;
             default:
                 return res.status(400).json({ error: 'Invalid file type' });
         }
 
-        // Verify file exists
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ error: 'File not found' });
+        if (!filePath || !fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'File not found on server' });
         }
 
-        // Send file with proper headers
-        res.setHeader('Content-Type', 'application/pdf');
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = {
+            '.pdf': 'application/pdf',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png'
+        }[ext] || 'application/octet-stream';
+
+        res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', 'inline');
         res.sendFile(filePath);
 
     } catch (error) {
-        console.error('Error serving file:', error);
         res.status(500).json({ error: 'Error serving file' });
+    }
+});
+
+
+router.get('/check-status', async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const [applications] = await pool.query(
+            'SELECT id FROM applications WHERE user_id = ?',
+            [req.session.user.id]
+        );
+
+        res.json({
+            hasApplication: applications.length > 0
+        });
+    } catch (error) {
+        console.error('Error checking application status:', error);
+        res.status(500).json({ error: 'Server error' });
     }
 });
 

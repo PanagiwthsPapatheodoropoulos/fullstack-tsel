@@ -1,8 +1,3 @@
-//we want to be able to publish the results of the applications
-//γ) Επιλογή για την εμφάνιση όλων των αιτήσεων που έχουν χαρακτηριστεί δεκτές έως εκείνη τη στιγμή και κουμπί για την αν
-// ακοίνωση των αποτελεσμάτων, μέσω του οποίου το περιεχόμενο της σελίδας θα γίνεται διαθέσιμο σε όλους τους χρήστες
-//  (εγγεγραμμένους και μη) μέσω είτε κάποιας υπάρχουσας κοινόχρηστης σελίδας (π.χ. βλ. more.html από την 1η Εργασία) 
-// είτε κάποιας νέας (π.χ. results.html), εφόσον η περίοδος αιτήσεων έχει λήξει.
 let currentApplications = [];
 let acceptedApplications = [];
 let universities = [];
@@ -280,6 +275,9 @@ function createApplicationCard(application) {
                         Δεκτή Αίτηση
                     </label>
                 </div>
+                <button onclick="deleteApplication(${application.application_id})" class="btn btn-danger delete-btn">
+                        <i class="fas fa-trash"></i> Διαγραφή
+                </button>
             </div>
             
             <div class="application-details">
@@ -324,6 +322,34 @@ function createApplicationCard(application) {
             </div>
         </div>
     `;
+}
+
+async function deleteApplication(applicationId) {
+    if (!confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την αίτηση;')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/applications/${applicationId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            showMessage('applications-success', 'Η αίτηση διαγράφηκε επιτυχώς');
+            // Refresh applications list
+            loadApplications();
+        } else {
+            const error = await response.json();
+            showMessage('applications-error', error.message || 'Σφάλμα κατά τη διαγραφή της αίτησης');
+        }
+    } catch (error) {
+        console.error('Error deleting application:', error);
+        showMessage('applications-error', 'Σφάλμα κατά τη διαγραφή της αίτησης');
+    }
 }
 
 function applyFilters() {
@@ -405,7 +431,7 @@ async function publishResults() {
     }
     
     try {
-        // First check period status
+        // Check period status first
         const periodResponse = await fetch('/api/periods/current', {
             credentials: 'include'
         });
@@ -416,8 +442,10 @@ async function publishResults() {
         }
 
         const periodData = await periodResponse.json();
-        if (!periodData.period) {
-            showMessage('results-error', 'Δεν βρέθηκε ενεργή περίοδος αιτήσεων');
+        
+        // Check if period is still active
+        if (periodData.period?.is_active) {
+            showMessage('results-error', 'Δεν μπορείτε να δημοσιεύσετε αποτελέσματα ενώ η περίοδος είναι ενεργή');
             return;
         }
 
@@ -434,21 +462,15 @@ async function publishResults() {
         
         if (response.ok && data.success) {
             showMessage('results-success', 'Τα αποτελέσματα δημοσιεύτηκαν επιτυχώς');
-            // Redirect to results page after success
             setTimeout(() => {
                 window.location.href = 'results.html';
             }, 2000);
         } else {
-            const message = data.message || 'Σφάλμα δημοσίευσης';
-            if (data.daysRemaining) {
-                showMessage('results-error', `${message} (Απομένουν ${data.daysRemaining} ημέρες)`);
-            } else {
-                showMessage('results-error', message);
-            }
+            showMessage('results-error', data.message || 'Σφάλμα κατά τη δημοσίευση των αποτελεσμάτων');
         }
     } catch (error) {
         console.error('Σφάλμα δημοσίευσης:', error);
-        showMessage('results-error', 'Σφάλμα δημοσίευσης αποτελεσμάτων');
+        showMessage('results-error', 'Σφάλμα κατά τη δημοσίευση των αποτελεσμάτων');
     }
 }
 

@@ -1,5 +1,3 @@
-//when submitting the application form there were both a success and an error message and the data was saved correctly
-
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/auth/me', {
@@ -89,11 +87,30 @@ async function handleApplicationSubmit(e) {
     e.preventDefault();
     
     // Validate form first
-    if (!validateForm()) {
-        return false;
-    }
+    const submitButton = document.querySelector('.submit-btn');
+    submitButton.disabled = true;
 
     try {
+
+        document.getElementById('application-success').style.display = 'none';
+        document.getElementById('application-error').style.display = 'none';
+
+        if (!validateForm()) {
+            submitButton.disabled = false;
+            return false;
+        }
+
+        const checkResponse = await fetch('/api/applications/check-status', {
+            credentials: 'include'
+        });
+        
+        const checkData = await checkResponse.json();
+        if (checkData.hasApplication) {
+            showMessage('application-error', 'Έχετε ήδη υποβάλει αίτηση. Δεν μπορείτε να υποβάλετε δεύτερη αίτηση.');
+            submitButton.disabled = false;
+            return false;
+        }
+
         const formData = new FormData();
         
         // Add user ID from stored value
@@ -113,7 +130,7 @@ async function handleApplicationSubmit(e) {
         const englishCertFile = document.getElementById('english-cert').files[0];
         
         if (!transcriptFile || !validateFile(transcriptFile) || !englishCertFile || !validateFile(englishCertFile)) {
-            return false;
+            return false
         }
         
         formData.append('transcript_file', transcriptFile);
@@ -141,19 +158,23 @@ async function handleApplicationSubmit(e) {
 
         if (response.ok) {
             showMessage('application-success', 'Η αίτησή σας υποβλήθηκε με επιτυχία!');
+            // Disable form inputs
+            const inputs = document.querySelectorAll('input, select, button');
+            inputs.forEach(input => input.disabled = true);
+            
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 2000);
-        } else {
-            if (data.error === 'User already has an application') {
-                showMessage('application-error', 'Έχετε ήδη υποβάλει αίτηση. Δεν μπορείτε να υποβάλετε δεύτερη αίτηση.');
-            } else {
-                showMessage('application-error', data.error || 'Σφάλμα κατά την υποβολή της αίτησης');
-            }
+        } 
+        else {
+            showMessage('application-error', data.error || 'Σφάλμα κατά την υποβολή της αίτησης');
+            submitButton.disabled = false;
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error submitting application:', error);
         showMessage('application-error', 'Σφάλμα κατά την υποβολή της αίτησης');
+        submitButton.disabled = false;
     }
     
     return false; // Prevent form submission

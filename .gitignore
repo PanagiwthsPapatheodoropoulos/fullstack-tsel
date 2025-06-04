@@ -1,6 +1,9 @@
 /node_modules/
 .env
 
+//ignore uploads folder
+/uploads
+
 # Logs
 logs
 *.log

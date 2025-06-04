@@ -924,6 +924,51 @@ input[disabled] {
     .checkbox-group label {
         line-height: 1.4;
     }
+
+    .user-info-bar {
+        flex-direction: column;
+        padding: 8px;
+        gap: 5px;
+        font-size: 0.9rem;
+    }
+
+    .user-label {
+        margin-bottom: 8px;
+        margin-right: 5px;
+        text-align: center;
+        font-size: 0.85rem;
+        white-space: normal; /* Allow text to wrap */
+        line-height: 1.2;
+    }
+
+    .logout-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        margin-top: 4px;
+        width: 100%;
+        max-width: 200px;
+    }
+
+    /* Adjust spacing when user info bar is visible */
+    .user-info-bar + .header {
+        margin-top: 70px;
+    }
+
+    /* Make user info bar fixed at the top */
+    .user-info-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Add some breathing room for the content */
+    body {
+        padding-top: 70px;
+    }
 }
 
 .user-info-bar {
@@ -939,7 +984,7 @@ input[disabled] {
     align-items: center;
     box-shadow: 0 2px 8px rgba(26, 79, 143, 0.08);
     font-size: 15px;
-    gap: 12px;
+    gap: 10px;
 }
 
 .user-info-bar .logout-btn {
@@ -1141,6 +1186,39 @@ input.error:focus {
 .success-message .success-icon {
     margin-right: 0.5rem;
 }
+
+
+.admin-return-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.admin-return-button button {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.admin-return-button button:hover {
+    background-color: #34495e;
+}
+
+.admin-return-button i {
+    content: "←"; 
+    font-size: 1.1rem;
+}
+
 
 /* responsiveness for tablets and laptops*/
 @media screen and (min-width: 600px) {
