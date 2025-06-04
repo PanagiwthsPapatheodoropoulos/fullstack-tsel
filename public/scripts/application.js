@@ -1,3 +1,5 @@
+let isSubmitting = false;
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/auth/me', {
@@ -85,13 +87,18 @@ async function loadUniversities() {
 
 async function handleApplicationSubmit(e) {
     e.preventDefault();
+
+     if (isSubmitting) {
+        return false;
+    }
+
     
     // Validate form first
     const submitButton = document.querySelector('.submit-btn');
     submitButton.disabled = true;
+    isSubmitting = true;
 
     try {
-
         document.getElementById('application-success').style.display = 'none';
         document.getElementById('application-error').style.display = 'none';
 
@@ -108,6 +115,7 @@ async function handleApplicationSubmit(e) {
         if (checkData.hasApplication) {
             showMessage('application-error', 'Έχετε ήδη υποβάλει αίτηση. Δεν μπορείτε να υποβάλετε δεύτερη αίτηση.');
             submitButton.disabled = false;
+            isSubmitting = false;
             return false;
         }
 
@@ -115,7 +123,6 @@ async function handleApplicationSubmit(e) {
         
         // Add user ID from stored value
         formData.append('user_id', window.userId);
-        
         // Add form data
         formData.append('passed_courses_percent', document.getElementById('passed-courses').value);
         formData.append('average_grade', document.getElementById('average').value);
@@ -165,6 +172,7 @@ async function handleApplicationSubmit(e) {
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 2000);
+            return;
         } 
         else {
             showMessage('application-error', data.error || 'Σφάλμα κατά την υποβολή της αίτησης');
@@ -175,6 +183,9 @@ async function handleApplicationSubmit(e) {
         console.error('Error submitting application:', error);
         showMessage('application-error', 'Σφάλμα κατά την υποβολή της αίτησης');
         submitButton.disabled = false;
+    }
+    finally{
+        isSubmitting = false;
     }
     
     return false; // Prevent form submission

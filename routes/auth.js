@@ -157,6 +157,13 @@ router.post('/signup', async (req, res) => {
     }
 });
 
+router.post('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        res.json({ message: 'Logged out' });
+    });
+});
+
 
 router.get('/check', (req, res) => {
     if (!req.session || !req.session.user || req.session.user.role !== 'administrator') {
@@ -165,13 +172,6 @@ router.get('/check', (req, res) => {
     res.json({ user: req.session.user });
 });
 
-
-router.post('/logout', (req, res) => {
-    req.session.destroy(() => {
-        res.clearCookie('connect.sid');
-        res.json({ message: 'Logged out' });
-    });
-});
 
 router.post('/check-username', async (req, res) => {
     const { username } = req.body;
@@ -189,6 +189,7 @@ router.post('/check-username', async (req, res) => {
         res.status(500).json({ message: 'Server error checking username' });
     }
 });
+
 
 
 module.exports = router;

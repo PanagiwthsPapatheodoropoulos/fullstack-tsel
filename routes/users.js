@@ -91,17 +91,5 @@ router.patch('/profile/:userId', async (req, res) => {
     }
 });
 
-router.get('/check-username/:username', async (req,res) => {
-    const username = req.params.username;
-
-    try {
-        const [existingUsers] = await pool.query("SELECT id FROM users WHERE username =?", [username]);
-
-        res.json({available: existingUsers.length === 0})//true or false in available field
-    } catch (error) {
-        console.error('Σφάλμα κατά τον έλεγχο του username στον server',error.message);
-        res.status(500).json({message: 'Σφάλμα στην ενημέρωση του username στον server'});
-    }
-});
 
 module.exports = router;

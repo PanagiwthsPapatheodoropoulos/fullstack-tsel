@@ -10,37 +10,67 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-// Get current active period
-router.get('/current', async (req, res) => {
-  try {
-    const query = `
-      SELECT * FROM application_periods 
-      WHERE is_active = 1 
-      ORDER BY created_at DESC 
-      LIMIT 1
-    `;
-    
-    const [rows] = await pool.query(query);
-    
-    if (rows.length === 0) {
-      return res.json({ period: null, isActive: false });
+const deactivateExpiredPeriods = async () => {
+    try {
+        const query = `
+            UPDATE application_periods 
+            SET is_active = 0 
+            WHERE is_active = 1 
+            AND NOW() > end_date`;
+            
+        const [result] = await pool.query(query);
+        if (result.affectedRows > 0) {
+            console.log(`Deactivated ${result.affectedRows} expired application period(s)`);
+        }
+    } catch (error) {
+        console.error('Error deactivating periods:', error);
     }
-    
-    const period = rows[0];
-    const currentDate = new Date();
-    const startDate = new Date(period.start_date);
-    const endDate = new Date(period.end_date);
-    
-    const isCurrentlyActive = currentDate >= startDate && currentDate <= endDate;
-    
-    res.json({ 
-      period: period, 
-      isActive: isCurrentlyActive 
-    });
-  } catch (error) {
-    console.error('Error fetching current period:', error);
-    res.status(500).json({ error: 'Failed to fetch current period' });
-  }
+};
+
+
+router.get('/current', async (req, res) => {
+    try {
+
+      await deactivateExpiredPeriods(); 
+      const query = `
+          SELECT *, 
+                  NOW() > end_date as has_ended,
+                  NOW() BETWEEN start_date AND end_date as is_current
+          FROM application_periods 
+          WHERE is_active = 1 
+          ORDER BY created_at DESC 
+          LIMIT 1
+      `;
+        
+      const [rows] = await pool.query(query);
+      
+      if (rows.length === 0) {
+          return res.json({ 
+              period: null, 
+              isActive: false,
+              message: 'Δεν έχει οριστεί περίοδος αιτήσεων'
+          });
+      }
+      
+      const period = rows[0];
+      const currentDate = new Date();
+      const startDate = new Date(period.start_date);
+      const endDate = new Date(period.end_date);
+      
+      const isCurrentlyActive = currentDate >= startDate && currentDate <= endDate;
+      
+      res.json({ 
+          period: period,
+          isActive: isCurrentlyActive,
+          message: isCurrentlyActive ? 
+              'Η περίοδος αιτήσεων είναι ενεργή' : 
+              'Η περίοδος αιτήσεων έχει λήξει'
+      });
+    }
+    catch (error) {
+      console.error('Error fetching current period:', error);
+      res.status(500).json({ error: 'Failed to fetch current period' });
+    }
 });
 
 // Set application period (admin only)
@@ -142,7 +172,8 @@ router.get('/admin/all', requireAdmin, async (req, res) => {
     
     const [rows] = await pool.query(query);
     res.json(rows);
-  } catch (error) {
+  }
+   catch (error) {
     console.error('Error fetching applications:', error);
     res.status(500).json({ error: 'Failed to fetch applications' });
   }
@@ -168,7 +199,8 @@ router.post('/admin/accept', requireAdmin, async (req, res) => {
     }
 
     res.json({ message: 'Applications updated successfully' });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error updating applications:', error);
     res.status(500).json({ message: 'Failed to update applications' });
   }
@@ -196,17 +228,6 @@ router.get('/admin/accepted', requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error fetching accepted applications:', error);
     res.status(500).json({ error: 'Failed to fetch accepted applications' });
-  }
-});
-
-// Publish results (admin only)
-router.post('/admin/publish', requireAdmin, async (req, res) => {
-  try {
-    // Add any publishing logic here if needed
-    res.json({ message: 'Results published successfully' });
-  } catch (error) {
-    console.error('Error publishing results:', error);
-    res.status(500).json({ message: 'Failed to publish results' });
   }
 });
 
@@ -248,5 +269,11 @@ router.get('/file/:applicationId/:fileType', requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to serve file' });
   }
 });
+
+setInterval(() => {
+    deactivateExpiredPeriods();
+}, 60000); 
+
+deactivateExpiredPeriods();//initial call
 
 module.exports = router;

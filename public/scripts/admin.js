@@ -519,10 +519,6 @@ function displayAcceptedApplications() {
 }
 
 
-
-
-
-
 async function loadUniversitiesManagement() {
     try {
         const response = await fetch('/api/universities', {

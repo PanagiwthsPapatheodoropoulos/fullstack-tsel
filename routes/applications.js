@@ -69,173 +69,51 @@ const uploadMiddleware = (req, res, next) => {
     });
 };
 
-// Get all applications (admin only)
-router.get('/', async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        a.id,
-        u.first_name,
-        u.last_name,
-        u.student_id,
-        a.passed_courses_percent,
-        a.average_grade,
-        a.english_level,
-        a.knows_extra_languages,
-        u1.university_name as first_choice,
-        u2.university_name as second_choice,
-        u3.university_name as third_choice,
-        a.transcript_file,
-        a.english_certificate_file,
-        a.other_certificates_files,
-        a.terms_accepted,
-        a.is_accepted,
-        a.submitted_at
-      FROM applications a
-      JOIN users u ON a.user_id = u.id
-      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
-      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
-      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
-      ORDER BY a.submitted_at DESC
-    `;
-    
-    const [rows] = await pool.query(query);
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching applications:', error);
-    res.status(500).json({ error: 'Failed to fetch applications' });
-  }
-});
+// Add this middleware at the top of your file
+const checkPeriodStatus = async (req, res, next) => {
+    try {
+        // First check for active periods that need to be deactivated
+        const [periodsToDeactivate] = await pool.query(`
+            SELECT id 
+            FROM application_periods 
+            WHERE is_active = 1 
+            AND NOW() > end_date`
+        );
 
-// Get applications sorted by average grade (descending)
-router.get('/sorted-by-grade', async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        a.id,
-        u.first_name,
-        u.last_name,
-        u.student_id,
-        a.passed_courses_percent,
-        a.average_grade,
-        a.english_level,
-        a.knows_extra_languages,
-        u1.university_name as first_choice,
-        u2.university_name as second_choice,
-        u3.university_name as third_choice,
-        a.transcript_file,
-        a.english_certificate_file,
-        a.other_certificates_files,
-        a.terms_accepted,
-        a.is_accepted,
-        a.submitted_at
-      FROM applications a
-      JOIN users u ON a.user_id = u.id
-      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
-      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
-      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
-      ORDER BY a.average_grade DESC
-    `;
-    
-    const [rows] = await pool.query(query);
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching applications sorted by grade:', error);
-    res.status(500).json({ error: 'Failed to fetch applications' });
-  }
-});
+        if (periodsToDeactivate.length > 0) {
+            // Update their status
+            await pool.query(`
+                UPDATE application_periods 
+                SET is_active = 0 
+                WHERE id IN (?)`,
+                [periodsToDeactivate.map(p => p.id)]
+            );
+            
+            console.log('Period(s) automatically deactivated:', 
+                periodsToDeactivate.map(p => p.id)
+            );
+        }
 
-// Get applications by minimum pass percentage
-router.get('/by-pass-percentage/:minPercentage', async (req, res) => {
-  try {
-    const minPercentage = parseFloat(req.params.minPercentage);
-    
-    if (isNaN(minPercentage) || minPercentage < 0 || minPercentage > 100) {
-      return res.status(400).json({ error: 'Invalid percentage value' });
+        // Get current active period status
+        const [activePeriod] = await pool.query(`
+            SELECT *, 
+                   NOW() > end_date as has_ended,
+                   NOW() BETWEEN start_date AND end_date as is_current
+            FROM application_periods 
+            WHERE is_active = 1 
+            ORDER BY created_at DESC 
+            LIMIT 1`
+        );
+
+        // Store period info in request for route handlers
+        req.currentPeriod = activePeriod[0] || null;
+        next();
+    } catch (error) {
+        console.error('Error checking period status:', error);
+        next();
     }
+};
 
-    const query = `
-      SELECT 
-        a.id,
-        u.first_name,
-        u.last_name,
-        u.student_id,
-        a.passed_courses_percent,
-        a.average_grade,
-        a.english_level,
-        a.knows_extra_languages,
-        u1.university_name as first_choice,
-        u2.university_name as second_choice,
-        u3.university_name as third_choice,
-        a.transcript_file,
-        a.english_certificate_file,
-        a.other_certificates_files,
-        a.terms_accepted,
-        a.is_accepted,
-        a.submitted_at
-      FROM applications a
-      JOIN users u ON a.user_id = u.id
-      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
-      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
-      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
-      WHERE a.passed_courses_percent >= ?
-      ORDER BY a.passed_courses_percent DESC
-    `;
-    
-    const [rows] = await pool.query(query, [minPercentage]);
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching applications by pass percentage:', error);
-    res.status(500).json({ error: 'Failed to fetch applications' });
-  }
-});
-
-// Get applications by university
-router.get('/by-university/:universityId', async (req, res) => {
-  try {
-    const universityId = parseInt(req.params.universityId);
-    
-    if (isNaN(universityId)) {
-      return res.status(400).json({ error: 'Invalid university ID' });
-    }
-
-    const query = `
-      SELECT 
-        a.id,
-        u.first_name,
-        u.last_name,
-        u.student_id,
-        a.passed_courses_percent,
-        a.average_grade,
-        a.english_level,
-        a.knows_extra_languages,
-        u1.university_name as first_choice,
-        u2.university_name as second_choice,
-        u3.university_name as third_choice,
-        a.transcript_file,
-        a.english_certificate_file,
-        a.other_certificates_files,
-        a.terms_accepted,
-        a.is_accepted,
-        a.submitted_at
-      FROM applications a
-      JOIN users u ON a.user_id = u.id
-      LEFT JOIN universities u1 ON a.first_choice_university_id = u1.university_id
-      LEFT JOIN universities u2 ON a.second_choice_university_id = u2.university_id
-      LEFT JOIN universities u3 ON a.third_choice_university_id = u3.university_id
-      WHERE a.first_choice_university_id = ? 
-         OR a.second_choice_university_id = ? 
-         OR a.third_choice_university_id = ?
-      ORDER BY a.submitted_at DESC
-    `;
-    
-    const [rows] = await pool.query(query, [universityId, universityId, universityId]);
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching applications by university:', error);
-    res.status(500).json({ error: 'Failed to fetch applications' });
-  }
-});
 
 // Get accepted applications
 router.get('/accepted', async (req, res) => {
@@ -307,8 +185,10 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 
+
+
 // Submit application
-router.post('/', uploadMiddleware, async (req, res) => {
+router.post('/', checkPeriodStatus , uploadMiddleware, async (req, res) => {
     try {
         // Log incoming request data for debugging
         console.log('Request body:', req.body);
@@ -496,62 +376,7 @@ router.put('/:id/acceptance', async (req, res) => {
   }
 });
 
-// Bulk update application acceptance status (admin only)
-router.put('/bulk-acceptance', async (req, res) => {
-  try {
-    const { applicationIds, is_accepted } = req.body;
-
-    if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
-      return res.status(400).json({ success: false, message: 'Invalid application IDs' });
-    }
-
-    const placeholders = applicationIds.map(() => '?').join(',');
-    const query = `UPDATE applications SET is_accepted = ? WHERE id IN (${placeholders})`;
-    const values = [is_accepted ? 1 : 0, ...applicationIds];
-
-    const [result] = await pool.query(query, values);
-
-    res.json({ 
-      success: true,
-      message: 'Applications updated successfully',
-      updatedCount: result.affectedRows
-    });
-  } catch (error) {
-    console.error('Error bulk updating applications:', error);
-    res.status(500).json({ success: false, message: 'Failed to update applications' });
-  }
-});
-
-// Get application statistics
-router.get('/stats', async (req, res) => {
-  try {
-    const queries = [
-      'SELECT COUNT(*) as total FROM applications',
-      'SELECT COUNT(*) as accepted FROM applications WHERE is_accepted = 1',
-      'SELECT AVG(average_grade) as avg_grade FROM applications',
-      'SELECT english_level, COUNT(*) as count FROM applications GROUP BY english_level'
-    ];
-
-    const [totalResult] = await pool.query(queries[0]);
-    const [acceptedResult] = await pool.query(queries[1]);
-    const [avgGradeResult] = await pool.query(queries[2]);
-    const [englishLevelResult] = await pool.query(queries[3]);
-
-    res.json({
-      total: totalResult[0].total,
-      accepted: acceptedResult[0].accepted,
-      averageGrade: parseFloat(avgGradeResult[0].avg_grade || 0).toFixed(2),
-      englishLevels: englishLevelResult
-    });
-  } catch (error) {
-    console.error('Error fetching application statistics:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
-  }
-});
-
-
-// In routes/applications.js
-router.post('/publish-results', async (req, res) => {
+router.post('/publish-results', checkPeriodStatus,async (req, res) => {
     try {
         // Check if period exists and is inactive
         const [periodRows] = await pool.query(`
@@ -609,7 +434,7 @@ router.post('/publish-results', async (req, res) => {
 
 
 // Get all applications (admin only)
-router.get('/admin/all', async (req, res) => {
+router.get('/admin/all', checkPeriodStatus, async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'administrator') {
     return res.status(403).json({ message: 'Not authorized' });
   }
@@ -730,7 +555,7 @@ router.get('/admin/accepted', async (req, res) => {
 });
 
 
-// Add this endpoint to serve files
+
 router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
     try {
         const { applicationId, fileType, index = 0 } = req.params;
