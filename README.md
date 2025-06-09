@@ -30,7 +30,7 @@ The site works only on localhost.Might deploy later
 run the sql command
 ```sql
 UPDATE application_periods 
-SET is_active = ,
+SET is_active = 0,
     end_date = '2025-06-15 00:00:00'
 WHERE id > 0;
 ```
