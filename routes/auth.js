@@ -31,7 +31,8 @@ router.get('/me', (req, res) => {
         first_name: req.session.user.first_name,
         last_name: req.session.user.last_name,
         student_id: req.session.user.student_id,
-        email: req.session.user.email
+        email: req.session.user.email,
+        phone: req.session.user.phone
     });
 });
 
@@ -56,9 +57,9 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Όλα τα πεδία είναι υποχρεωτικά' });
         }
 
-        // Updated query to include student_id and email
+        // Add phone to the SELECT statement
         const [users] = await pool.query(
-            'SELECT id, username, password, first_name, last_name, role, student_id, email FROM users WHERE username = ?', 
+            'SELECT id, username, password, first_name, last_name, role, student_id, email, phone FROM users WHERE username = ?', 
             [username]
         );
 
@@ -73,7 +74,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Λάθος username ή password' });
         }
 
-        // Set session with all required fields
+        // Set session with all user fields including phone
         req.session.user = {
             id: user.id,
             username: user.username,
@@ -81,10 +82,11 @@ router.post('/login', async (req, res) => {
             first_name: user.first_name,
             last_name: user.last_name,
             student_id: user.student_id,
-            email: user.email
+            email: user.email,
+            phone: user.phone // This will now have a value
         };
 
-        // Return complete user info
+        // Return complete user info including phone
         res.json({
             message: 'Επιτυχής σύνδεση',
             user: {
@@ -94,7 +96,8 @@ router.post('/login', async (req, res) => {
                 last_name: user.last_name,
                 student_id: user.student_id,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                phone: user.phone // This will now be included in the response
             }
         });
     } 
@@ -103,7 +106,6 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Σφάλμα server κατά την είσοδο' });
     }
 });
-
 
 /**
  * User registration endpoint

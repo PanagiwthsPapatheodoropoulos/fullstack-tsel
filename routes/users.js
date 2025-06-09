@@ -10,6 +10,16 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../config/database');
 
+
+const requireAuth = (req, res, next) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Απαιτείται σύνδεση' });
+    }
+    next();
+};
+
+
+
 /**
  * Get user profile
  * @route GET /api/users/profile/:userId
@@ -18,8 +28,13 @@ const { pool } = require('../config/database');
  * @throws {404} User not found
  * @throws {500} Server error
  */
-router.get('/profile/:userId', async (req,res) => {
+router.get('/profile/:userId',requireAuth, async (req,res) => {
     const userId = req.params.userId;
+
+    // Verify user is accessing their own profile
+    if (req.session.user.id !== parseInt(req.params.userId)) {
+        return res.status(403).json({ error: 'Μη εξουσιοδοτημένη πρόσβαση' });
+    }
 
     try {
         const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
@@ -53,6 +68,14 @@ router.get('/profile/:userId', async (req,res) => {
  * @throws {500} Server error
  */
 router.patch('/profile/:userId', async (req, res) => {
+
+
+     // Verify user is updating their own profile
+    if (req.session.user.id !== parseInt(req.params.userId)) {
+        return res.status(403).json({ error: 'Μη εξουσιοδοτημένη πρόσβαση' });
+    }
+
+
     const userId = req.params.userId;
     const {firstName, lastName, studentId, phone, email, password} = req.body;
 
@@ -78,7 +101,10 @@ router.patch('/profile/:userId', async (req, res) => {
             return res.status(400).json({ error: 'Μη έγκυρη διεύθυνση email' });
         }
 
-        const [existingEmails] = await pool.query('SELECT id FROM users WHERE email = ? AND id != ? ', [email], [userId]);
+        const [existingEmails] = await pool.query(
+            'SELECT id FROM users WHERE email = ? AND id != ?', 
+            [email, userId]
+        );
 
         if(existingEmails.length > 0 ){
             return res.status(400).json({ message: 'Το email υπάρχει ήδη' });
@@ -94,25 +120,63 @@ router.patch('/profile/:userId', async (req, res) => {
             return res.status(400).json({ message: 'Το τηλέφωνο υπάρχει ήδη' });
         }
 
-        if(password && password.trim() !== '') {
-           if(password.length < 5) {
-                return res.status(400).json({ error: 'Ο κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 5 χαρακτήρες' });
-            }
-            if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-                return res.status(400).json({ error: 'Ο κωδικός πρόσβασης πρέπει να περιέχει τουλάχιστον ένα σύμβολο' });
-            }
-
+        let query, params;
+        if (password && password.trim() !== '') {
+            // With password update
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
+            query = `
+                UPDATE users 
+                SET first_name = ?, 
+                    last_name = ?, 
+                    student_id = ?,
+                    phone = ?, 
+                    email = ?, 
+                    password = ? 
+                WHERE id = ?
+            `;
+            params = [firstName, lastName, studentId, phone, email, hashedPassword, userId];
+        } else {
+            // Without password update
+            query = `
+                UPDATE users 
+                SET first_name = ?, 
+                    last_name = ?, 
+                    student_id = ?,
+                    phone = ?, 
+                    email = ? 
+                WHERE id = ?
+            `;
+            params = [firstName, lastName, studentId, phone, email, userId];
+        }
 
-            //at this point the criteria for the user login fields fit
-            //so we will update the user
-            const [result] = await pool.query(
-                'UPDATE users SET first_name =?, last_name =?, student_id =?,\
-                phone =?, email =?, password =? WHERE id =?',
-                [firstName, lastName, studentId, phone, email, hashedPassword, userId]);
-                res.json({message: 'Ο χρήστης ενημερώθηκε επιτυχώς'});
+        const [result] = await pool.query(query, params);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Ο χρήστης δεν βρέθηκε' });
+        }
+
+        req.session.user = {
+            ...req.session.user,
+            first_name: firstName,
+            last_name: lastName,
+            student_id: studentId,
+            phone: phone,
+            email: email
+        };
+
+
+        res.json({ 
+            message: 'Ο χρήστης ενημερώθηκε επιτυχώς',
+            user: {
+                id: userId,
+                first_name: firstName,
+                last_name: lastName,
+                student_id: studentId,
+                phone: phone,
+                email: email
             }
+        });
     } 
     catch (error) {
         console.error('Ενημέρωση χρήστη απέτυχε', error.message);

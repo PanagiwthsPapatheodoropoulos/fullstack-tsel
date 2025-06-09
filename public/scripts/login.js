@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 handleLogIn = async (e) => {
     e.preventDefault();
     showLoading(true);
-
+    
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
 
@@ -110,7 +110,7 @@ handleLogIn = async (e) => {
     }
 
     try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -122,19 +122,18 @@ handleLogIn = async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            showSuccess(data.message);
+            // Show success message
+            showSuccess('Επιτυχής σύνδεση! Ανακατεύθυνση...');
             
-            // Wait 1.5 seconds before redirecting
+            // Wait 2 seconds before redirecting
             setTimeout(() => {
                 if (data.user && data.user.role === 'administrator') {
                     window.location.href = 'admin.html';
-                } 
-                else {
+                } else {
                     window.location.href = 'index.html';
                 }
-            }, 1500);
-        } 
-        else {
+            }, 2000);
+        } else {
             showError(data.message || 'Σφάλμα κατά την είσοδο');
         }
     } 
@@ -146,7 +145,6 @@ handleLogIn = async (e) => {
         showLoading(false);
     }
 };
-
 
 /**
  * Show error message
@@ -178,6 +176,7 @@ function showError(message) {
 /**
  * Remove all existing message elements
  * @function removeExistingMessages
+ * @description This function removes any existing error or success messages from the login form.
  */
 function removeExistingMessages() {
     const loginForm = document.getElementById('login-form');
@@ -200,6 +199,15 @@ function showSuccess(message) {
     successDiv.innerHTML = `
         <span class="success-icon">✅</span>
         <span>${message}</span>
+    `;
+    successDiv.style.cssText = `
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        color: #155724;
     `;
 
     loginForm.insertBefore(successDiv, loginForm.firstChild);

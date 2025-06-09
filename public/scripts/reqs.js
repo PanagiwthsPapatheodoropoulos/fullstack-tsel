@@ -87,24 +87,38 @@ async function checkEligibility(e) {
         );
     } 
     else {
-        const user = await checkLoginStatus();
-
-        if(user) {
+        try {
+            const response = await fetch('/auth/me', {
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                // User is logged in
+                showMessage('eligibility-success', 
+                    'Συγχαρητήρια! Πληρούνται οι ελάχιστες απαιτήσεις για το πρόγραμμα Erasmus+.\n' +
+                    'Μπορείτε να προχωρήσετε άμεσα στην <a href="application.html">υποβολή της αίτησής σας</a>.'
+                );
+            } 
+            else {
+                // User is not logged in
+                showMessage('eligibility-success', 
+                    'Συγχαρητήρια! Πληρούνται οι ελάχιστες απαιτήσεις για το πρόγραμμα Erasmus+.\n' +
+                    'Παρακαλώ <a href="sign-up.html">δημιουργήστε λογαριασμό</a> ή ' +
+                    '<a href="login.html">συνδεθείτε</a> για να υποβάλετε την αίτησή σας.'
+                );
+            }
+        } 
+        catch (error) {
+            console.error('Error checking authentication:', error);
+            // Handle as not logged in
             showMessage('eligibility-success', 
                 'Συγχαρητήρια! Πληρούνται οι ελάχιστες απαιτήσεις για το πρόγραμμα Erasmus+.\n' +
-                'Μπορείτε να προχωρήσετε άμεσα στην <a href="application.html">υποβολή της αίτησής σας</a>.'
-            );
-        }
-        else {
-            showMessage('eligibility-success', 
-                'Συγχαρητήρια! Πληρούνται οι ελάχιστες απαιτήσεις για το πρόγραμμα Erasmus+.\n' +
-                'Παρακαλώ <a href="sign-up.html">δημιουργήστε λογαριασμό</a> ή <a href="login.html">συνδεθείτε</a> ' +
-                'για να υποβάλετε την αίτησή σας.'
+                'Παρακαλώ <a href="sign-up.html">δημιουργήστε λογαριασμό</a> ή ' +
+                '<a href="login.html">συνδεθείτε</a> για να υποβάλετε την αίτησή σας.'
             );
         }
     }
 }
-
 
 /**
  * Display message to user

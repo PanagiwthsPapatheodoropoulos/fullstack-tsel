@@ -1219,6 +1219,84 @@ input.error:focus {
     font-size: 1.1rem;
 }
 
+/* Hide profile link by default - only shown for logged in users */
+.profile-form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.profile-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #1a4f8f;
+}
+
+.profile-form input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.profile-form input[disabled] {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+.profile-form small {
+    display: block;
+    margin-top: 0.25rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.profile-form .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a4f8f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.profile-form .btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.profile-form input.error {
+    border-color: #dc3545;
+}
+
+.profile-form .field-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.profile-form input:not([type="password"]):not([disabled]) {
+    background-color: #fff;
+}
+
+.profile-form input[disabled] {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    cursor: not-allowed;
+}
 
 /* responsiveness for tablets and laptops*/
 @media screen and (min-width: 600px) {

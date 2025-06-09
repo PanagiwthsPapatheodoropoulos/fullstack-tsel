@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Προφίλ - Πρόγραμμα Erasmus+</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div id="user-info-bar" class="user-info-bar" style="display:none"></div>
+    <div class="header">
+        <h1>Πρόγραμμα Erasmus+</h1>
+        <p>Επεξεργασία Προφίλ</p>
+    </div>
+    
+    <nav>
+        <a href="index.html">ΑΡΧΙΚΗ</a>
+        <a href="more.html">ΠΕΡΙΣΣΟΤΕΡΑ</a>
+        <a href="reqs.html">ΕΛΑΧΙΣΤΕΣ ΑΠΑΙΤΗΣΕΙΣ</a>
+        <a href="application.html">ΑΙΤΗΣΗ</a>
+        <a href="results.html">ΑΠΟΤΕΛΕΣΜΑΤΑ</a>
+        <a href="profile.html">ΠΡΟΦΙΛ</a>
+        <a href="sign-up.html">ΕΓΓΡΑΦΗ</a>
+        <a href="login.html">ΕΙΣΟΔΟΣ</a>
+    </nav>
+
+    <div class="container">
+        <div class="profile-form-container">
+            <form id="profile-form" class="profile-form">
+                <div class="form-group">
+                    <label>Όνομα Χρήστη</label>
+                    <input type="text" id="username" disabled placeholder="Το όνομα χρήστη δεν μπορεί να αλλάξει">
+                </div>
+
+                <div class="row">
+                    <div class="col-s-12 col-m-6 col-l-6">
+                        <div class="form-group">
+                            <label>Όνομα</label>
+                            <input type="text" id="firstName" name="firstName" required 
+                                placeholder="Εισάγετε το όνομά σας">
+                        </div>
+                    </div>
+                    <div class="col-s-12 col-m-6 col-l-6">
+                        <div class="form-group">
+                            <label>Επώνυμο</label>
+                            <input type="text" id="lastName" name="lastName" required 
+                                placeholder="Εισάγετε το επίθετό σας">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-s-12 col-m-6 col-l-6">
+                        <div class="form-group">
+                            <label>Αριθμός Μητρώου</label>
+                            <input type="text" id="studentId" name="studentId" required 
+                                placeholder="π.χ. 2022202200XXX">
+                        </div>
+                    </div>
+                    <div class="col-s-12 col-m-6 col-l-6">
+                        <div class="form-group">
+                            <label>Τηλέφωνο</label>
+                            <input type="tel" id="phone" name="phone" required 
+                                placeholder="π.χ. 69XXXXXXXX">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" name="email" required 
+                        placeholder="π.χ. onoma@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Νέος Κωδικός (προαιρετικό)</label>
+                    <input type="password" id="password" name="password" 
+                        placeholder="Αφήστε κενό αν δεν θέλετε αλλαγή κωδικού">
+                    <small>Ο κωδικός πρέπει να έχει τουλάχιστον 5 χαρακτήρες και ένα σύμβολο</small>
+                </div>
+
+                <div class="message success" id="profile-success" style="display:none"></div>
+                <div class="message error" id="profile-error" style="display:none"></div>
+
+                <button type="submit" class="btn btn-primary">Ενημέρωση Στοιχείων</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Πρόγραμμα Erasmus+ | Πανεπιστήμιο Πελοποννήσου UOP</p>
+    </div>
+
+    <script src="scripts/profile.js"></script>
+    <script src="scripts/userinfo.js"></script>
+    <script src="scripts/adminReturn.js"></script>
+</body>
+</html>

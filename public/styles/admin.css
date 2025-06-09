@@ -712,3 +712,25 @@ body {
 .delete-btn i {
     font-size: 0.9rem;
 }
+
+.universities-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    margin-top: 2rem;
+}
+
+.university-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+    margin-bottom: 1.5rem; /* Add bottom margin */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.university-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
