@@ -57,7 +57,6 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Όλα τα πεδία είναι υποχρεωτικά' });
         }
 
-        // Add phone to the SELECT statement
         const [users] = await pool.query(
             'SELECT id, username, password, first_name, last_name, role, student_id, email, phone FROM users WHERE username = ?', 
             [username]

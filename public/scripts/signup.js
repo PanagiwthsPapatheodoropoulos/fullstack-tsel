@@ -557,3 +557,12 @@ function showMessage(type, message) {
 document.addEventListener('DOMContentLoaded', () => {
     setupRealTimeValidation();
 });
+
+
+//Panagiotis Papatheodoropoulos
+//123papathe!
+
+
+//Iliana Christana
+//il123!
+

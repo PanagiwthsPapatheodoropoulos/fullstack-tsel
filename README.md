@@ -25,3 +25,12 @@ npm start
 
 # NOTE
 The site works only on localhost.Might deploy later
+
+# For public results
+run the sql command
+```sql
+UPDATE application_periods 
+SET is_active = ,
+    end_date = '2025-06-15 00:00:00'
+WHERE id > 0;
+```
