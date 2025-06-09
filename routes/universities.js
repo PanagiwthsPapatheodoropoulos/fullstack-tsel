@@ -1,19 +1,41 @@
+/**
+ * Universities route module
+ * @module routes/universities
+ * @requires express
+ * @requires ../config/database
+ */
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+
+/**
+ * Get all universities
+ * @route GET /api/universities
+ * @returns {Object[]} List of universities
+ * @throws {500} Server error
+ */
 router.get('/', async (req,res) => {
     try {
         const [universities] = await pool.query(
         'SELECT university_id, university_name, country, city, website FROM universities ORDER BY university_name');
 
         res.json(universities)
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Σφάλμα ανάκτησης", error.message);
         res.status(500).json({error: "Σφάλμα κατά την ανάκτηση των πανεπιστημίων"});
     }
 });
 
+/**
+ * Get specific university by ID
+ * @route GET /api/universities/:id
+ * @param {string} id - University ID
+ * @returns {Object} University details
+ * @throws {404} University not found
+ * @throws {500} Server error
+ */
 router.get('/:id', async (req, res) => {
     const universityId = req.params.id;
 
@@ -35,6 +57,12 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+/**
+ * Get all universities 
+ * @route GET /api/universities/admin
+ * @returns {Object[]} List of universities with all details
+ * @throws {500} Server error
+ */
 router.get('/admin', async (req, res) => {
     try {
         const [universities] = await pool.query(
@@ -43,14 +71,26 @@ router.get('/admin', async (req, res) => {
              ORDER BY university_name`
         );
         res.json(universities);
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Error fetching universities:", error);
         res.status(500).json({ error: "Σφάλμα διακομιστή" });
     }
 });
 
 
-//admin adds a university 
+/**
+ * Add new university,admin functionality
+ * @route POST /api/universities
+ * @param {Object} req.body - University data
+ * @param {string} req.body.university_name - University name
+ * @param {string} req.body.country - Country
+ * @param {string} req.body.city - City
+ * @param {string} req.body.website - Website URL
+ * @returns {Object} Success message and university ID
+ * @throws {400} Missing required fields or university exists
+ * @throws {500} Server error
+ */
 router.post('/', async (req, res) => {
     const { university_name, country,city,website } = req.body;
 
@@ -82,6 +122,15 @@ router.post('/', async (req, res) => {
     }
 });
 
+/**
+ * Delete university,admin functionality
+ * @route DELETE /api/universities/:id
+ * @param {string} id - University ID
+ * @returns {Object} Success message
+ * @throws {404} University not found
+ * @throws {400} University has applications
+ * @throws {500} Server error
+ */
 router.delete('/:id', async (req, res) =>{
     const universityId = req.params.id;
 
@@ -111,7 +160,8 @@ router.delete('/:id', async (req, res) =>{
         );
 
         res.json({message: 'Το πανεπιστήμιο διαγράφηκε με επιτυχία'});
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Σφάλμα διαγραφής πανεπιστημίου", error.message);
         res.status(500).json({error: "Σφάλμα κατά διαγραφή του πανεπιστημίου"});
     }

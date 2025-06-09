@@ -1,9 +1,17 @@
+/**
+ * User information bar
+ * @module userinfo
+ */
+
+//After DOM is loaded,execute the async function of fetching user data
+//and maming a bar with user info and a logout button
 document.addEventListener('DOMContentLoaded', async () => {
     const userInfoBar = document.getElementById('user-info-bar');
     try {
         const response = await fetch('/auth/me', {
             credentials: 'include'
         });
+        
         if (response.ok) {
             const user = await response.json();
             userInfoBar.innerHTML = `
@@ -18,10 +26,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 window.location.href = 'login.html';
             };
-        } else {
+        } 
+        else {
             userInfoBar.style.display = 'none';
         }
-    } catch (err) {
+    } 
+    catch (err) {
         userInfoBar.style.display = 'none';
     }
 });

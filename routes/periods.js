@@ -1,8 +1,23 @@
+/**
+ * Application Periods route module
+ * @module routes/periods
+ * @requires express
+ * @requires ../config/database
+ * @requires path
+ */
 const express = require('express');
 const router = express.Router();
 const { pool }  = require('../config/database');
 const path = require('path');
 
+/**
+ * Admin authorization middleware
+ * @middleware
+ * @param {express.Request} req - Express request object
+ * @param {express.Response} res - Express response object
+ * @param {express.NextFunction} next - Next middleware function
+ * @throws {403} If user is not admin
+ */
 const requireAdmin = (req, res, next) => {
   if (!req.session.user || req.session.user.role !== 'administrator') {
     return res.status(403).json({ error: 'Admin access required' });
@@ -10,6 +25,11 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+/**
+ * Deactivate expired application periods
+ * @async
+ * @function deactivateExpiredPeriods
+ */
 const deactivateExpiredPeriods = async () => {
     try {
         const query = `
@@ -22,12 +42,18 @@ const deactivateExpiredPeriods = async () => {
         if (result.affectedRows > 0) {
             console.log(`Deactivated ${result.affectedRows} expired application period(s)`);
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error deactivating periods:', error);
     }
 };
 
-
+/**
+ * Get current application period
+ * @route GET /api/periods/current
+ * @returns {Object} Current period information and status
+ * @throws {500} Server error
+ */
 router.get('/current', async (req, res) => {
     try {
 
@@ -73,7 +99,16 @@ router.get('/current', async (req, res) => {
     }
 });
 
-// Set application period (admin only)
+/**
+ * Set new application period this is only for admin
+ * @route POST /api/periods/set
+ * @param {Object} req.body - Period data
+ * @param {string} req.body.start_date - Period start date
+ * @param {string} req.body.end_date - Period end date
+ * @returns {Object} Success message
+ * @throws {400} Invalid dates
+ * @throws {500} Server error
+ */
 router.post('/set', requireAdmin ,async (req, res) => {
   try {
     const { start_date, end_date } = req.body;
@@ -111,7 +146,8 @@ router.post('/set', requireAdmin ,async (req, res) => {
       success: true, 
       message: 'Η περίοδος υποβολής αιτήσεων έχει οριστεί επιτυχώς' 
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Σφάλμα ορισμού περιόδου ', error);
     res.status(500).json({ 
       success: false, 
@@ -120,7 +156,12 @@ router.post('/set', requireAdmin ,async (req, res) => {
   }
 });
 
-// Get all periods
+/**
+ * Get all application periods
+ * @route GET /api/periods
+ * @returns {Object[]} List of all periods
+ * @throws {500} Server error
+ */
 router.get('/', async (req, res) => {
   try {
     const query = `
@@ -130,15 +171,21 @@ router.get('/', async (req, res) => {
     
     const [rows] = await pool.query(query);
     res.json(rows);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching periods:', error);
     res.status(500).json({ error: 'Failed to fetch periods' });
   }
 });
 
 
-// Add these new routes:
-// Get all applications (admin only) - matches frontend call
+/**
+ * Get all applications for admin
+ * @route GET /api/periods/admin/all
+ * @returns {Object[]} List of all applications
+ * @throws {403} Not authorized
+ * @throws {500} Server error
+ */
 router.get('/admin/all', requireAdmin, async (req, res) => {
   try {
     const query = `
@@ -179,7 +226,16 @@ router.get('/admin/all', requireAdmin, async (req, res) => {
   }
 });
 
-// Accept applications (admin only)
+/**
+ * Accept applications (admin only)
+ * @route POST /api/periods/admin/accept
+ * @param {Object} req.body - Request body
+ * @param {number[]} req.body.applicationIds - Array of application IDs to accept
+ * @returns {Object} Success message
+ * @throws {403} Not authorized
+ * @throws {400} Invalid application IDs
+ * @throws {500} Server error
+ */
 router.post('/admin/accept', requireAdmin, async (req, res) => {
   try {
     const { applicationIds } = req.body;
@@ -206,7 +262,13 @@ router.post('/admin/accept', requireAdmin, async (req, res) => {
   }
 });
 
-// Get accepted applications (admin only)
+/**
+ * Get accepted applications (admin only)
+ * @route GET /api/periods/admin/accepted
+ * @returns {Object[]} List of accepted applications
+ * @throws {403} Not authorized
+ * @throws {500} Server error
+ */
 router.get('/admin/accepted', requireAdmin, async (req, res) => {
   try {
     const query = `
@@ -225,13 +287,24 @@ router.get('/admin/accepted', requireAdmin, async (req, res) => {
     
     const [rows] = await pool.query(query);
     res.json(rows);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching accepted applications:', error);
     res.status(500).json({ error: 'Failed to fetch accepted applications' });
   }
 });
 
-// Serve application files (admin only)
+/**
+ * Get application file (admin only)
+ * @route GET /api/periods/file/:applicationId/:fileType
+ * @param {string} applicationId - Application ID
+ * @param {string} fileType - Type of file (transcript/english/other)
+ * @returns {File} Requested file
+ * @throws {403} Not authorized
+ * @throws {404} File or application not found
+ * @throws {400} Invalid file type
+ * @throws {500} Server error
+ */
 router.get('/file/:applicationId/:fileType', requireAdmin, async (req, res) => {
   try {
     const { applicationId, fileType } = req.params;
@@ -264,7 +337,8 @@ router.get('/file/:applicationId/:fileType', requireAdmin, async (req, res) => {
     
     const filePath = path.join(__dirname, '../uploads', filename);
     res.download(filePath);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error serving file:', error);
     res.status(500).json({ error: 'Failed to serve file' });
   }

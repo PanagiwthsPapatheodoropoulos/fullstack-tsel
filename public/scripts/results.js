@@ -1,5 +1,19 @@
+/**
+ * Results display module
+ * @module results
+ */
+
+
+//After DOM is loaded,load the results
 document.addEventListener('DOMContentLoaded', loadResults);
 
+
+/**
+ * Load and display application results
+ * @async
+ * @function loadResults
+ * @throws {Error} If fetching results fails
+ */
 async function loadResults() {
     try {
         // First check if period has ended
@@ -33,6 +47,16 @@ async function loadResults() {
     }
 }
 
+
+/**
+ * Display application results grouped by university
+ * @function displayResults
+ * @param {Array<Object>} results - Array of accepted applications
+ * @param {string} results[].first_choice - University name
+ * @param {string} results[].first_name - Student first name
+ * @param {string} results[].last_name - Student last name
+ * @param {string} results[].student_id - Student ID
+ */
 function displayResults(results) {
     const container = document.getElementById('results-content');
     
@@ -70,6 +94,13 @@ function displayResults(results) {
     container.innerHTML = html;
 }
 
+
+/**
+ * Display message to user
+ * @function showMessage
+ * @param {string} elementId - ID of element to show message in
+ * @param {string} message - Message to display
+ */
 function showMessage(elementId, message) {
     const element = document.getElementById(elementId);
     if (element) {

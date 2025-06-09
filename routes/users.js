@@ -1,9 +1,23 @@
+/**
+ * Users route module
+ * @module routes/users
+ * @requires express
+ * @requires bcrypt
+ * @requires ../config/database
+ */
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../config/database');
 
-
+/**
+ * Get user profile
+ * @route GET /api/users/profile/:userId
+ * @param {string} userId - User ID
+ * @returns {Object} User profile information
+ * @throws {404} User not found
+ * @throws {500} Server error
+ */
 router.get('/profile/:userId', async (req,res) => {
     const userId = req.params.userId;
 
@@ -23,6 +37,21 @@ router.get('/profile/:userId', async (req,res) => {
 
 });
 
+/**
+ * Update user profile,i use patch because I might not want to update all the fields
+ * @route PATCH /api/users/profile/:userId
+ * @param {string} userId - User ID
+ * @param {Object} req.body - Profile update data
+ * @param {string} req.body.firstName - First name (no digits allowed)
+ * @param {string} req.body.lastName - Last name (no digits allowed)
+ * @param {string} req.body.studentId - Student ID (must start with 2022, 13 digits)
+ * @param {string} req.body.phone - Phone number (10 digits)
+ * @param {string} req.body.email - Email address
+ * @param {string} [req.body.password] - New password (min 5 chars, requires symbol)
+ * @returns {Object} Success message
+ * @throws {400} Validation errors
+ * @throws {500} Server error
+ */
 router.patch('/profile/:userId', async (req, res) => {
     const userId = req.params.userId;
     const {firstName, lastName, studentId, phone, email, password} = req.body;

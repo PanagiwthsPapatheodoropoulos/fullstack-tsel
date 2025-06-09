@@ -1,3 +1,9 @@
+/**
+ * Signup form handling module
+ * @module signup
+ */
+
+//After DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/auth/me', {
@@ -63,7 +69,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 credentials: 'include'
                             });
                             window.location.reload();
-                        } catch (err) {
+                        } 
+                        catch (err) {
                             console.error('Logout error:', err);
                         }
                     };
@@ -75,12 +82,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         }
-    } catch (err) {
+    } 
+    catch (err) {
         console.error('Error checking login status:', err);
     }
 });
 
-// Validation functions
+
+/**
+ * Validate name fields
+ * @function validateName
+ * @param {string} name - Name to validate
+ * @param {string} fieldName - Field name for error message
+ * @returns {string|null} Error message or null if valid
+ */
 function validateName(name, fieldName) {
     if (!name || name.trim() === '') {
         return `Το ${fieldName} είναι υποχρεωτικό`;
@@ -91,6 +106,12 @@ function validateName(name, fieldName) {
     return null;
 }
 
+/**
+ * Validate student ID
+ * @function validateStudentId
+ * @param {string} studentId - Student ID to validate
+ * @returns {string|null} Error message or null if valid
+ */
 function validateStudentId(studentId) {
     if (!studentId || studentId.trim() === '') {
         return 'Ο αριθμός μητρώου είναι υποχρεωτικός';
@@ -104,6 +125,13 @@ function validateStudentId(studentId) {
     return null;
 }
 
+
+/**
+ * Validate phone number
+ * @function validatePhone
+ * @param {string} phone - Phone number to validate
+ * @returns {string|null} Error message or null if valid
+ */
 function validatePhone(phone) {
     if (!phone || phone.trim() === '') {
         return 'Το τηλέφωνο είναι υποχρεωτικό';
@@ -114,6 +142,13 @@ function validatePhone(phone) {
     return null;
 }
 
+
+/**
+ * Validate email address
+ * @function validateEmail
+ * @param {string} email - Email to validate
+ * @returns {string|null} Error message or null if valid
+ */
 function validateEmail(email) {
     if (!email || email.trim() === '') {
         return 'Το email είναι υποχρεωτικό';
@@ -125,6 +160,13 @@ function validateEmail(email) {
     return null;
 }
 
+
+/**
+ * Validate username
+ * @function validateUsername
+ * @param {string} username - Username to validate
+ * @returns {string|null} Error message or null if valid
+ */
 function validateUsername(username) {
     if (!username || username.trim() === '') {
         return 'Το όνομα χρήστη είναι υποχρεωτικό';
@@ -132,6 +174,13 @@ function validateUsername(username) {
     return null;
 }
 
+
+/**
+ * Validate password
+ * @function validatePassword
+ * @param {string} password - Password to validate
+ * @returns {string|null} Error message or null if valid
+ */
 function validatePassword(password) {
     if (!password) {
         return 'Ο κωδικός πρόσβασης είναι υποχρεωτικός';
@@ -147,6 +196,14 @@ function validatePassword(password) {
     return null;
 }
 
+
+/**
+ * Validate password confirmation
+ * @function validateConfirmPassword
+ * @param {string} password - Original password
+ * @param {string} confirmPassword - Password confirmation
+ * @returns {string|null} Error message or null if valid
+ */
 function validateConfirmPassword(password, confirmPassword) {
     if (!confirmPassword) {
         return 'Η επιβεβαίωση κωδικού είναι υποχρεωτική';
@@ -157,7 +214,15 @@ function validateConfirmPassword(password, confirmPassword) {
     return null;
 }
 
-// Check if username already exists (asynchronous validation)
+
+
+/**
+ * Check if username already exists
+ * @async
+ * @function checkUsernameExists
+ * @param {string} username - Username to check
+ * @returns {Promise<boolean>} True if username exists
+ */
 async function checkUsernameExists(username) {
     try {
         const response = await fetch('/auth/check-username', {
@@ -180,7 +245,11 @@ async function checkUsernameExists(username) {
     }
 }
 
-// Real-time validation
+
+/**
+ * Setup real-time form validation
+ * @function setupRealTimeValidation
+ */
 function setupRealTimeValidation() {
     const fields = [
         { id: 'firstname', validator: (value) => validateName(value, 'όνομα') },
@@ -211,7 +280,7 @@ function setupRealTimeValidation() {
         }
     });
 
-    // Special handling for username with async validation
+    // Special handling for username
     const usernameField = document.getElementById('username');
     if (usernameField) {
         let timeoutId;
@@ -235,6 +304,13 @@ function setupRealTimeValidation() {
     }
 }
 
+
+/**
+ * Show field-specific error message
+ * @function showFieldError
+ * @param {string} fieldId - ID of field with error
+ * @param {string} errorMessage - Error message to display
+ */
 function showFieldError(fieldId, errorMessage) {
     const field = document.getElementById(fieldId);
     if (!field) return;
@@ -262,6 +338,12 @@ function showFieldError(fieldId, errorMessage) {
     }
 }
 
+
+/**
+ * Clear field-specific error message
+ * @function clearFieldError
+ * @param {string} fieldId - ID of field to clear error from
+ */
 function clearFieldError(fieldId) {
     const field = document.getElementById(fieldId);
     if (!field) return;
@@ -273,6 +355,13 @@ function clearFieldError(fieldId) {
     }
 }
 
+
+/**
+ * Handle signup form submission
+ * @async
+ * @function handleSignup
+ * @param {Event} event - Submit event
+ */
 async function handleSignup(event) {
     event.preventDefault();
     
@@ -341,7 +430,8 @@ async function handleSignup(event) {
         showFieldError('username', usernameError);
         errors.push(usernameError);
         hasErrors = true;
-    } else {
+    } 
+    else {
         // Check if username exists
         const usernameExists = await checkUsernameExists(username);
         if (usernameExists) {
@@ -409,16 +499,25 @@ async function handleSignup(event) {
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);
-        } else {
+        } 
+        else {
             // Handle server-side errors (fallback)
             showMessage('error', data.error || data.message || 'Σφάλμα κατά την εγγραφή');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Signup error:', error);
         showMessage('error', 'Σφάλμα επικοινωνίας με τον server');
     }
 }
 
+
+/**
+ * Show general message to user
+ * @function showMessage
+ * @param {('success'|'error')} type - Message type
+ * @param {string} message - Message to display
+ */
 function showMessage(type, message) {
     // Create message container if it doesn't exist
     let messageDiv = document.querySelector('.message-container');

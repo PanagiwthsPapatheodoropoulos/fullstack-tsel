@@ -1,12 +1,23 @@
+/**
+ * Admin interface script module
+ * @module admin
+ */
 let currentApplications = [];
 let acceptedApplications = [];
 let universities = [];
 let filteredApplications = [];
 
+
+//after DOM is loaded we initialize the admin
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdmin();
 });
 
+
+/**
+ * Initialize admin 
+ * @function initializeAdmin
+ */
 function initializeAdmin() {
     checkAdminAuth();
     loadPeriodStatus();
@@ -16,6 +27,14 @@ function initializeAdmin() {
     setupEventListeners();
 }
 
+
+/**
+ * Show message to user
+ * @function showMessage
+ * @param {string} elementId - ID of element to show message in
+ * @param {string} message - Message to display
+ * @param {string} [type='info'] - Message type (info/error/success)
+ */
 function showMessage(elementId,message,type = 'info'){
     const element = document.getElementById(elementId);
     if(element) {
@@ -28,6 +47,13 @@ function showMessage(elementId,message,type = 'info'){
     }
 }
 
+
+/**
+ * Load current application period status
+ * @async
+ * @function loadPeriodStatus
+ * @throws {Error} If loading period fails
+ */
 async function loadPeriodStatus() {
     try {
         const response = await fetch('/api/periods/current', {
@@ -41,16 +67,24 @@ async function loadPeriodStatus() {
         if (response.ok) {
             const period = await response.json();
             displayPeriodStatus(period);
-        } else {
+        } 
+        else {
             showMessage('period-error', 'Σφάλμα φόρτωσης περιόδου αιτήσεων');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα φόρτωσης περιόδου:', error);
         showMessage('period-error', 'Σφάλμα φόρτωσης περιόδου αιτήσεων');
     }
 }
 
 
+/**
+ * Check admin authentication
+ * @async
+ * @function checkAdminAuth
+ * @throws {Error} If authentication check fails
+ */
 async function checkAdminAuth(){
     try {
         const response = await fetch('/api/auth/check', {
@@ -72,12 +106,20 @@ async function checkAdminAuth(){
             return;
         }
         // If here, user is administrator: do nothing, allow access
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Σφάλμα ελέγχου πιστοποίησης administrator:", error);
         window.location.href = 'login.html';
     }
 }
 
+
+/**
+ * Handle admin logout
+ * @async
+ * @function handleLogout
+ * @throws {Error} If logout fails
+ */
 async function handleLogout(){
     try {
         await fetch('/api/auth/logout', {
@@ -86,14 +128,19 @@ async function handleLogout(){
         });
 
         window.location.href = 'login.html';
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα αποσύνδεσης:',error);
         
     }
 }
 
 
-
+/**
+ * Switch between admin interface tabs
+ * @function switchTab
+ * @param {string} tabName - Name of tab to switch to
+ */
 function switchTab(tabName) {
     // Απενεργοποίηση όλων των tabs
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -120,6 +167,11 @@ function switchTab(tabName) {
     }
 }
 
+
+/**
+ * Set up event listeners
+ * @function setupEventListeners
+ */
 function setupEventListeners() {
     const periodForm = document.getElementById('period-form');
     if(periodForm) {
@@ -127,6 +179,12 @@ function setupEventListeners() {
     }
 }
 
+
+/**
+ * Display period status
+ * @function displayPeriodStatus
+ * @param {Object} periodResponse - Period data from server
+ */
 function displayPeriodStatus(periodResponse) {
     const statusDiv = document.getElementById('period-status');
     const now = new Date();
@@ -154,11 +212,13 @@ function displayPeriodStatus(periodResponse) {
         statusText = `Η περίοδος αιτήσεων θα ξεκινήσει στις ${formatDate(startDate)}`;
         statusIcon = '🟡';
         statusClass = 'status-upcoming';
-    } else if (now >= startDate && now <= endDate) {
+    } 
+    else if (now >= startDate && now <= endDate) {
         statusText = `Η περίοδος αιτήσεων είναι ΕΝΕΡΓΗ (λήγει στις ${formatDate(endDate)})`;
         statusIcon = '🟢';
         statusClass = 'status-active';
-    } else {
+    } 
+    else {
         statusText = `Η περίοδος αιτήσεων έχει ΛΗΞΕΙ (έληξε στις ${formatDate(endDate)})`;
         statusIcon = '🔴';
         statusClass = 'status-expired';
@@ -174,6 +234,14 @@ function displayPeriodStatus(periodResponse) {
     `;
 }
 
+
+/**
+ * Handle period update
+ * @async
+ * @function handlePeriodUpdate
+ * @param {Event} e - Submit event
+ * @throws {Error} If update fails
+ */
 async function handlePeriodUpdate(e) {
     e.preventDefault();
 
@@ -210,12 +278,20 @@ async function handlePeriodUpdate(e) {
         else{
             showMessage('period-error','Σφάλμα κατά την ενημέρωση της περίοδου αιτήσεων');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα ενημέρωσης περιόδου:',error);
         showMessage('period-error','Σφάλμα κατά την ενημέρωση της περίοδου αιτήσεων');   
     }
 }
 
+
+/**
+ * Load applications list
+ * @async
+ * @function loadApplications
+ * @throws {Error} If loading fails
+ */
 async function loadApplications() {
     document.getElementById('applications-loading').style.display = 'block';
     document.getElementById('applications-container').innerHTML = '';
@@ -235,17 +311,26 @@ async function loadApplications() {
             console.log('currentApplications:', currentApplications);
             await loadUniversitiesFilter();
             displayApplications(currentApplications);
-        } else {
+        } 
+        else {
             showMessage('applications-error', 'Σφάλμα φόρτωσης αιτήσεων');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα φόρτωσης αιτήσεων:', error);
         showMessage('applications-error', 'Σφάλμα φόρτωσης αιτήσεων');
-    } finally {
+    } 
+    finally {
         document.getElementById('applications-loading').style.display = 'none';
     }
 }
 
+
+/**
+ * Display applications list
+ * @function displayApplications
+ * @param {Array<Object>} applications - Applications to display
+ */
 function displayApplications(applications){
     const container = document.getElementById('applications-container');
     if (!Array.isArray(applications) || applications.length === 0) {
@@ -256,6 +341,13 @@ function displayApplications(applications){
     container.innerHTML = applicationsHtml;
 }
 
+
+/**
+ * Create HTML for application card
+ * @function createApplicationCard
+ * @param {Object} application - Application data
+ * @returns {string} HTML string
+ */
 function createApplicationCard(application) {
     const isAccepted = acceptedApplications.some(acc => acc.application_id === application.application_id);
     
@@ -324,6 +416,14 @@ function createApplicationCard(application) {
     `;
 }
 
+
+/**
+ * Delete an application
+ * @async
+ * @function deleteApplication
+ * @param {number} applicationId 
+ * @throws {Error} If deletion fails
+ */
 async function deleteApplication(applicationId) {
     if (!confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την αίτηση;')) {
         return;
@@ -342,20 +442,26 @@ async function deleteApplication(applicationId) {
             showMessage('applications-success', 'Η αίτηση διαγράφηκε επιτυχώς');
             // Refresh applications list
             loadApplications();
-        } else {
+        } 
+        else {
             const error = await response.json();
             showMessage('applications-error', error.message || 'Σφάλμα κατά τη διαγραφή της αίτησης');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error deleting application:', error);
         showMessage('applications-error', 'Σφάλμα κατά τη διαγραφή της αίτησης');
     }
 }
 
+/**
+ * Apply filters to applications list
+ * @function applyFilters
+ */
 function applyFilters() {
     filteredApplications = [...currentApplications];
     
-    // Φίλτρο ελάχιστου ποσοστού επιτυχίας
+    // filter for success rate
     const minSuccessRate = document.getElementById('min-success-rate').value;
     if (minSuccessRate) {
         filteredApplications = filteredApplications.filter(app => 
@@ -363,7 +469,7 @@ function applyFilters() {
         );
     }
     
-    // Φίλτρο πανεπιστημίου
+    // university filter
     const universityFilter = document.getElementById('university-filter').value;
     if (universityFilter) {
         filteredApplications = filteredApplications.filter(app => 
@@ -373,7 +479,7 @@ function applyFilters() {
         );
     }
     
-    // Ταξινόμηση
+    // sort option filter
     const sortOption = document.getElementById('sort-option').value;
     switch(sortOption) {
         case 'grade_desc':
@@ -393,7 +499,12 @@ function applyFilters() {
 }
 
 
-// Αποθήκευση επιλεγμένων αιτήσεων
+/**
+ * Save accepted applications
+ * @async
+ * @function saveAcceptedApplications
+ * @throws {Error} If saving accepted applications fails
+ */
 async function saveAcceptedApplications() {
     const checkboxes = document.querySelectorAll('.accept-checkbox:checked');
     const acceptedIds = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-id')));
@@ -413,17 +524,25 @@ async function saveAcceptedApplications() {
             acceptedApplications = currentApplications.filter(app => 
                 acceptedIds.includes(app.application_id)
             );
-        } else {
+        } 
+        else {
             const error = await response.json();
             showMessage('applications-error', error.message || 'Σφάλμα αποθήκευσης');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα αποθήκευσης:', error);
         showMessage('applications-error', 'Σφάλμα αποθήκευσης επιλεγμένων αιτήσεων');
     }
 }
 
-// In public/scripts/admin.js
+/**
+ * Publish results of accepted applications
+ * @async
+ * @function publishResults
+ * @throws {Error} If publishing results fails
+ * 
+ */
 async function publishResults() {
     if (acceptedApplications.length === 0) {
         showMessage('results-error', 'Δεν υπάρχουν δεκτές αιτήσεις για δημοσίευση');
@@ -465,16 +584,23 @@ async function publishResults() {
             setTimeout(() => {
                 window.location.href = 'results.html';
             }, 2000);
-        } else {
+        } 
+        else {
             showMessage('results-error', data.message || 'Σφάλμα κατά τη δημοσίευση των αποτελεσμάτων');
         }
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Σφάλμα δημοσίευσης:', error);
         showMessage('results-error', 'Σφάλμα κατά τη δημοσίευση των αποτελεσμάτων');
     }
 }
 
-// Fixed loadAcceptedApplications function
+/**
+ * Load accepted applications
+ * @async
+ * @function loadAcceptedApplications
+ * @throws {Error} If loading accepted applications fails
+ */
 async function loadAcceptedApplications() {
     try {
         const response = await fetch('/api/applications/admin/accepted', {
@@ -492,13 +618,17 @@ async function loadAcceptedApplications() {
         else {
             showMessage('results-error', 'Σφάλμα φόρτωσης δεκτών αιτήσεων');
         }
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Σφάλμα φόρτωσης δεκτών αιτήσεων:', error);
         showMessage('results-error', 'Σφάλμα φόρτωσης δεκτών αιτήσεων');
     }
 }
 
-
+/**
+ * Display accepted applications
+ * @function displayAcceptedApplications
+ */
 function displayAcceptedApplications() {
     const container = document.getElementById('results-container');
     
@@ -518,7 +648,12 @@ function displayAcceptedApplications() {
     container.innerHTML = html;
 }
 
-
+/**
+ * Load universities management interface
+ * @async
+ * @function loadUniversitiesManagement
+ * @throws {Error} If loading universities fails
+ */
 async function loadUniversitiesManagement() {
     try {
         const response = await fetch('/api/universities', {
@@ -528,16 +663,23 @@ async function loadUniversitiesManagement() {
         if (response.ok) {
             const universities = await response.json();
             displayUniversitiesManagement(universities);
-        } else {
+        } 
+        else {
             showMessage('universities-error', 'Σφάλμα φόρτωσης πανεπιστημίων');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα φόρτωσης πανεπιστημίων:', error);
         showMessage('universities-error', 'Σφάλμα φόρτωσης πανεπιστημίων');
     }
 }
 
-
+/**
+ * Load universities filter options
+ * @async
+ * @function loadUniversitiesFilter
+ * @throws {Error} If loading universities fails
+ */
 async function loadUniversitiesFilter() {
     try {
         const response = await fetch('/api/universities', { credentials: 'include' });
@@ -553,12 +695,17 @@ async function loadUniversitiesFilter() {
                 select.appendChild(option);
             });
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα φόρτωσης πανεπιστημίων:', error);
     }
 }
 
-
+/**
+ * Display universities management interface
+ * @function displayUniversitiesManagement
+ * @param {Array<Object>} universities - List of universities to display
+ */
 function displayUniversitiesManagement(universities) {
     const container = document.getElementById('universities-container');
     
@@ -602,11 +749,15 @@ function displayUniversitiesManagement(universities) {
     
     container.innerHTML = html;
     
-    // Προσθήκη event listener για τη φόρμα
     document.getElementById('add-university-form').addEventListener('submit', handleAddUniversity);
 }
 
-// Δημιουργία κάρτας πανεπιστημίου
+/**
+ * Create HTML for university card
+ * @function createUniversityCard
+ * @param {Object} university - University data
+ * @returns {string} HTML string for university card
+ */
 function createUniversityCard(university) {
     return `
         <div class="university-card" data-id="${university.university_id}">
@@ -641,6 +792,15 @@ function createUniversityCard(university) {
     `;
 }
 
+
+
+/**
+ * Handle adding a new university
+ * @async
+ * @function handleAddUniversity
+ * @param {Event} e - Submit event
+ * @throws {Error} If adding fails
+ */
 async function handleAddUniversity(e) {
     e.preventDefault();
 
@@ -673,12 +833,20 @@ async function handleAddUniversity(e) {
         else {
             showMessage('universities-error', 'Αποτυχία προσθήκης πανεπιστημίου');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα κατά την προσθήκη πανεπιστημίου:', error);
         showMessage('universities-error', 'Σφάλμα προσθήκης πανεπιστημίου');
     }
 }
 
+/**
+ * Delete a university
+ * @async
+ * @function deleteUniversity
+ * @param {number} universityId - ID of the university to delete
+ * @throws {Error} If deletion fails
+ */
 async function deleteUniversity(universityId) {
     if (!confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το πανεπιστήμιο;')) {
         return;
@@ -693,25 +861,37 @@ async function deleteUniversity(universityId) {
         if (response.ok) {
             showMessage('universities-success', 'Το πανεπιστήμιο διαγράφηκε επιτυχώς');
             loadUniversitiesManagement();
-        } else {
+        } 
+        else {
             const error = await response.json();
             showMessage('universities-error', error.message || 'Σφάλμα διαγραφής πανεπιστημίου');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα διαγραφής πανεπιστημίου:', error);
         showMessage('universities-error', 'Σφάλμα διαγραφής πανεπιστημίου');
     }
 }
 
 
-
+/**
+ * Format date
+ * @function formatDate
+ * @param {Date|string} date - Date to format
+ * @returns {string} Formatted date string
+ */
 function formatDate(date) {
     if (!date) return '';
     const d = new Date(date);
     return d.toLocaleDateString('el-GR');
 }
 
-// Μορφοποίηση ημερομηνίας και ώρας
+/**
+ * Format date and time
+ * @function formatDateTime
+ * @param {Date|string} datetime - Date/time to format
+ * @returns {string} Formatted date/time string
+ */
 function formatDateTime(datetime) {
     if (!datetime) return '';
     const d = new Date(datetime);

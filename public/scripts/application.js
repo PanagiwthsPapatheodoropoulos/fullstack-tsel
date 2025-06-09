@@ -1,5 +1,11 @@
+/**
+ * Application form handling module
+ * @module application
+ */
+
 let isSubmitting = false;
 
+//after DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/auth/me', {
@@ -39,12 +45,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Setup file inputs
         setupFileInputs();
         
-    } catch (err) {
+    } 
+    catch (err) {
         console.error('Error:', err);
         window.location.href = 'login.html';
     }
 });
 
+/**
+ * Display message to user
+ * @function showMessage
+ * @param {string} elementId - ID of element to show message in
+ * @param {string} message - Message text to display
+ * @param {string} [type='info'] - Message type (info/error/success)
+ */
 function showMessage(elementId, message, type = 'info') {
     const element = document.getElementById(elementId);
     if (element) {
@@ -58,6 +72,13 @@ function showMessage(elementId, message, type = 'info') {
     }
 }
 
+
+/**
+ * Load universities for selection dropdowns
+ * @async
+ * @function loadUniversities
+ * @throws {Error} If loading universities fails
+ */
 async function loadUniversities() {
     try {
         const response = await fetch('/api/universities', {
@@ -80,15 +101,25 @@ async function loadUniversities() {
                 });
             });
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error loading universities:', error);
     }
 }
 
+
+/**
+ * Handle application form submission
+ * @async
+ * @function handleApplicationSubmit
+ * @param {Event} e - Submit event
+ * @throws {Error} If submission fails
+ * @returns {boolean} False to prevent default form submission
+ */
 async function handleApplicationSubmit(e) {
     e.preventDefault();
 
-     if (isSubmitting) {
+    if (isSubmitting) {
         return false;
     }
 
@@ -191,6 +222,11 @@ async function handleApplicationSubmit(e) {
     return false; // Prevent form submission
 }
 
+
+/**
+ * Set up file input handlers
+ * @function setupFileInputs
+ */
 function setupFileInputs() {
     const fileInputs = document.querySelectorAll('.file-input');
     const form = document.getElementById('application-form');
@@ -218,6 +254,12 @@ function setupFileInputs() {
     }
 }
 
+
+/**
+ * Update file input display
+ * @function updateFileDisplay
+ * @param {HTMLInputElement} input - File input element
+ */
 function updateFileDisplay(input) {
     const fileNameSpan = input.closest('.file-upload').querySelector('.file-name');
     
@@ -226,7 +268,8 @@ function updateFileDisplay(input) {
             // For multiple files
             const fileNames = Array.from(input.files).map(file => file.name);
             fileNameSpan.textContent = fileNames.join(', ');
-        } else {
+        } 
+        else {
             // For single file
             fileNameSpan.textContent = input.files[0].name;
         }
@@ -234,13 +277,22 @@ function updateFileDisplay(input) {
         // Add visual feedback
         fileNameSpan.style.color = '#28a745';
         input.closest('.file-upload').classList.add('has-file');
-    } else {
+    } 
+    else {
         fileNameSpan.textContent = 'Δεν έχει επιλεγεί αρχείο';
         fileNameSpan.style.color = '';
         input.closest('.file-upload').classList.remove('has-file');
     }
 }
 
+
+/**
+ * Validate uploaded file
+ * @function validateFile
+ * @param {File} file - File to validate
+ * @param {number} [maxSize=5242880] - Maximum file size in bytes (5MB)
+ * @returns {boolean} True if file is valid
+ */
 function validateFile(file, maxSize = 5 * 1024 * 1024) { // 5MB default max size
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
     
@@ -257,7 +309,12 @@ function validateFile(file, maxSize = 5 * 1024 * 1024) { // 5MB default max size
     return true;
 }
 
-// Add validation for form fields
+
+/**
+ * Validate form fields
+ * @function validateForm
+ * @returns {boolean} True if all fields are valid
+ */
 function validateForm() {
     // Get form fields
     const passedCourses = document.getElementById('passed-courses');

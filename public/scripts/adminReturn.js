@@ -1,3 +1,7 @@
+/**
+ * Adds a return arrow button for admin
+ * @description This function checks if the user is an administrator and adds a button to return to the admin page.
+ */
 async function addAdminReturnButton() {
     try {
         const response = await fetch('/auth/me', {
@@ -17,7 +21,8 @@ async function addAdminReturnButton() {
                 document.body.insertBefore(adminButton, document.body.firstChild);
             }
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error checking admin status:', error);
     }
 }

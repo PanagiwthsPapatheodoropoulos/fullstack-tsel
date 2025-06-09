@@ -1,3 +1,9 @@
+/**
+ * Login page functionality module
+ * @module login
+ */
+
+//After DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('api/auth/me', {
@@ -66,19 +72,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                         credentials: 'include'
                     });
                     window.location.reload();
-                } catch (err) {
+                } 
+                catch (err) {
                     console.error('Logout error:', err);
                 }
             };
             infoDiv.appendChild(logoutButton);
-        } else {
+        } 
+        else {
             console.log('Not logged in - response not ok');
         }
-    } catch (err) {
+    } 
+    catch (err) {
         console.error('Error checking login status:', err);
     }
 });
 
+
+/**
+ * Handle login form submission
+ * @async
+ * @function handleLogIn
+ * @param {Event} e - Submit event
+ * @throws {Error} If login request fails
+ */
 handleLogIn = async (e) => {
     e.preventDefault();
     showLoading(true);
@@ -111,21 +128,31 @@ handleLogIn = async (e) => {
             setTimeout(() => {
                 if (data.user && data.user.role === 'administrator') {
                     window.location.href = 'admin.html';
-                } else {
+                } 
+                else {
                     window.location.href = 'index.html';
                 }
             }, 1500);
-        } else {
+        } 
+        else {
             showError(data.message || 'Σφάλμα κατά την είσοδο');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Σφάλμα κατά την είσοδο:', error);
         showError('Σφάλμα κατά την είσοδο');
-    } finally {
+    } 
+    finally {
         showLoading(false);
     }
 };
 
+
+/**
+ * Show error message
+ * @function showError
+ * @param {string} message - Error message to display
+ */
 function showError(message) {
     const loginForm = document.getElementById('login-form');
     removeExistingMessages();
@@ -147,12 +174,23 @@ function showError(message) {
     }, 5000);
 }
 
+
+/**
+ * Remove all existing message elements
+ * @function removeExistingMessages
+ */
 function removeExistingMessages() {
     const loginForm = document.getElementById('login-form');
     const existingMessages = loginForm.querySelectorAll('.error-message, .success-message');
     existingMessages.forEach(msg => msg.remove());
 }
 
+
+/**
+ * Show success message
+ * @function showSuccess
+ * @param {string} message - Success message to display
+ */
 function showSuccess(message) {
     const loginForm = document.getElementById('login-form');
     removeExistingMessages();
@@ -167,6 +205,12 @@ function showSuccess(message) {
     loginForm.insertBefore(successDiv, loginForm.firstChild);
 }
 
+
+/**
+ * Toggle loading state of submit button
+ * @function showLoading
+ * @param {boolean} isLoading - Whether to show loading state
+ */
 function showLoading(isLoading) {
     const submitButton = document.getElementById('submit-button');
 

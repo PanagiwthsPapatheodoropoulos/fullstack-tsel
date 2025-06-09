@@ -1,3 +1,9 @@
+/**
+ * Login page functionality module
+ * @module reqs
+ */
+
+//After DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('.eligibility-form');
     form.addEventListener('submit', checkEligibility);
@@ -11,21 +17,38 @@ document.addEventListener('DOMContentLoaded', () => {
     form.insertBefore(messageContainer, form.firstChild);
 });
 
+/**
+ * Check current user login status
+ * @async
+ * @function checkLoginStatus
+ * @returns {Promise<Object|null>} User information if logged in, null otherwise
+ * @throws {Error} If login check fails
+ */
 async function checkLoginStatus() {
     try {
         const response = await fetch('/auth/me', {
             credentials: 'include'
         });
+
         if (response.ok) {
             return await response.json();
         }
         return null;
-    } catch (err) {
+    } 
+    catch (err) {
         console.error('Error checking login status:', err);
         return null;
     }
 }
 
+
+/**
+ * Check eligibility based on form input
+ * @async
+ * @function checkEligibility
+ * @param {Event} e - Submit event
+ * @throws {Error} If eligibility check fails
+ */
 async function checkEligibility(e) {
     e.preventDefault();
     
@@ -62,7 +85,8 @@ async function checkEligibility(e) {
             'Δεν πληρούνται οι ελάχιστες απαιτήσεις:\n' + 
             failedChecks.join('\n')
         );
-    } else {
+    } 
+    else {
         const user = await checkLoginStatus();
 
         if(user) {
@@ -81,6 +105,14 @@ async function checkEligibility(e) {
     }
 }
 
+
+/**
+ * Display message to user
+ * @function showMessage
+ * @param {string} elementId - ID of element to show message in
+ * @param {string} message - Message to display (supports HTML)
+ * @param {string} [type='info'] - Message type (info/error/success)
+ */
 function showMessage(elementId, message, type = 'info') {
     const element = document.getElementById(elementId);
     if(element) {

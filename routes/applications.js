@@ -1,3 +1,13 @@
+/**
+ * Applications route module
+ * @module routes/applications
+ * @requires express
+ * @requires multer
+ * @requires path
+ * @requires fs
+ * @requires ../config/database
+ */
+
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
@@ -5,14 +15,17 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-
+/**
+ * Upload directory configuration
+ * @constant {string}
+ */
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
 
-// Configure multer for file uploads
+//multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // Double-check directory exists
@@ -38,7 +51,8 @@ const upload = multer({
         const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
-        } else {
+        } 
+        else {
             cb(new Error('Invalid file type. Only PDF, JPG and PNG are allowed.'), false);
         }
     },
@@ -59,7 +73,8 @@ const uploadMiddleware = (req, res, next) => {
                 error: 'File upload error', 
                 details: err.message 
             });
-        } else if (err) {
+        } 
+        else if (err) {
             return res.status(500).json({ 
                 error: 'Server error during file upload', 
                 details: err.message 
@@ -69,7 +84,14 @@ const uploadMiddleware = (req, res, next) => {
     });
 };
 
-// Add this middleware at the top of your file
+/**
+ * Check application period status middleware
+ * @middleware
+ * @async
+ * @param {express.Request} req - Express request object
+ * @param {express.Response} res - Express response object
+ * @param {express.NextFunction} next - Next middleware function
+ */
 const checkPeriodStatus = async (req, res, next) => {
     try {
         // First check for active periods that need to be deactivated
@@ -108,14 +130,20 @@ const checkPeriodStatus = async (req, res, next) => {
         // Store period info in request for route handlers
         req.currentPeriod = activePeriod[0] || null;
         next();
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error checking period status:', error);
         next();
     }
 };
 
 
-// Get accepted applications
+/**
+ * Get all accepted applications
+ * @route GET /api/applications/accepted
+ * @returns {Object[]} List of accepted applications
+ * @throws {500} Server error
+ */
 router.get('/accepted', async (req, res) => {
   try {
     const query = `
@@ -143,13 +171,22 @@ router.get('/accepted', async (req, res) => {
     
     const [rows] = await pool.query(query);
     res.json(rows);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching accepted applications:', error);
     res.status(500).json({ error: 'Failed to fetch accepted applications' });
   }
 });
 
-// Get user's application
+/**
+ * Get user's application
+ * @route GET /api/applications/user/:userId
+ * @param {string} userId - User ID
+ * @returns {Object} User's application details
+ * @throws {400} Invalid user ID
+ * @throws {404} Application not found
+ * @throws {500} Server error
+ */
 router.get('/user/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
@@ -178,16 +215,23 @@ router.get('/user/:userId', async (req, res) => {
     }
     
     res.json(rows[0]);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching user application:', error);
     res.status(500).json({ error: 'Failed to fetch application' });
   }
 });
 
 
-
-
-// Submit application
+/**
+ * Submit new application
+ * @route POST /api/applications
+ * @param {Object} req.body - Application data
+ * @param {Object} req.files - Uploaded files
+ * @returns {Object} Submission confirmation
+ * @throws {400} Missing files or invalid period
+ * @throws {500} Server error
+ */
 router.post('/', checkPeriodStatus , uploadMiddleware, async (req, res) => {
     try {
         // Log incoming request data for debugging
@@ -274,14 +318,16 @@ router.post('/', checkPeriodStatus , uploadMiddleware, async (req, res) => {
                 applicationId: result.insertId
             });
 
-        } catch (dbError) {
+        } 
+        catch (dbError) {
             // Clean up files if database operation fails
             cleanup(req.files);
             console.error('Database error:', dbError);
             throw dbError;
         }
 
-    } catch (error) {
+    } 
+    catch (error) {
         // Clean up any uploaded files on error
         if (req.files) {
             cleanup(req.files);
@@ -294,6 +340,15 @@ router.post('/', checkPeriodStatus , uploadMiddleware, async (req, res) => {
     }
 });
 
+/**
+ * Delete application
+ * @route DELETE /api/applications/:id
+ * @param {string} id - Application ID
+ * @returns {Object} Deletion confirmation
+ * @throws {403} Not authorized
+ * @throws {404} Application not found
+ * @throws {500} Server error
+ */
 router.delete('/:id', async (req, res) => {
     if (!req.session.user || req.session.user.role !== 'administrator') {
         return res.status(403).json({ message: 'Not authorized' });
@@ -334,7 +389,8 @@ router.delete('/:id', async (req, res) => {
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath);
                 }
-            } catch (err) {
+            } 
+            catch (err) {
                 console.warn(`Failed to delete file ${filename}:`, err);
             }
         });
@@ -347,12 +403,23 @@ router.delete('/:id', async (req, res) => {
             deletedFiles: relatedFiles
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error deleting application:', error);
         res.status(500).json({ message: 'Failed to delete application' });
     }
 });
-// Update application acceptance status (admin only)
+
+/**
+ * Update application acceptance status
+ * @route PUT /api/applications/:id/acceptance
+ * @param {string} id - Application ID
+ * @param {boolean} is_accepted - Acceptance status
+ * @returns {Object} Update confirmation
+ * @throws {400} Invalid application ID
+ * @throws {404} Application not found
+ * @throws {500} Server error
+ */
 router.put('/:id/acceptance', async (req, res) => {
   try {
     const applicationId = parseInt(req.params.id);
@@ -370,12 +437,20 @@ router.put('/:id/acceptance', async (req, res) => {
     }
 
     res.json({ message: 'Application status updated successfully' });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error updating application status:', error);
     res.status(500).json({ error: 'Failed to update application status' });
   }
 });
 
+/**
+ * Publish application results
+ * @route POST /api/applications/publish-results
+ * @returns {Object} Published results
+ * @throws {400} No completed period or accepted applications
+ * @throws {500} Server error
+ */
 router.post('/publish-results', checkPeriodStatus,async (req, res) => {
     try {
         // Check if period exists and is inactive
@@ -422,7 +497,8 @@ router.post('/publish-results', checkPeriodStatus,async (req, res) => {
             results: acceptedApplications
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error publishing results:', error);
         res.status(500).json({ 
             success: false,
@@ -433,7 +509,13 @@ router.post('/publish-results', checkPeriodStatus,async (req, res) => {
 });
 
 
-// Get all applications (admin only)
+/**
+ * Get all applications this is only for admin
+ * @route GET /api/applications/admin/all
+ * @returns {Object[]} List of all applications
+ * @throws {403} Not authorized
+ * @throws {500} Server error
+ */
 router.get('/admin/all', checkPeriodStatus, async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'administrator') {
     return res.status(403).json({ message: 'Not authorized' });
@@ -470,14 +552,23 @@ router.get('/admin/all', checkPeriodStatus, async (req, res) => {
     `;
     const [rows] = await pool.query(query);
     res.json(rows);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching all applications (admin):', error);
     res.status(500).json({ error: 'Failed to fetch applications' });
   }
 });
 
 
-// Accept applications (admin only)
+/**
+ * Accept multiple applications this is only for admin
+ * @route POST /api/applications/admin/accept
+ * @param {number[]} applicationIds - Array of application IDs to accept
+ * @returns {Object} Update confirmation
+ * @throws {403} Not authorized
+ * @throws {400} Invalid application IDs
+ * @throws {500} Server error
+ */
 router.post('/admin/accept', async (req, res) => {
     if (!req.session.user || req.session.user.role !== 'administrator') {
         return res.status(403).json({ message: 'Not authorized' });
@@ -504,13 +595,20 @@ router.post('/admin/accept', async (req, res) => {
             message: 'Αιτήσεις ενημερώθηκαν επιτυχώς',
             acceptedIds: applicationIds 
         });
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error updating accepted applications:', error);
         res.status(500).json({ message: 'Αποτυχία ενημέρωσης αιτήσεων' });
     }
 });
 
-
+/**
+ * Get accepted applications this is only for admin
+ * @route GET /api/applications/admin/accepted
+ * @returns {Object[]} List of accepted applications
+ * @throws {403} Not authorized
+ * @throws {500} Server error
+ */
 router.get('/admin/accepted', async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'administrator') {
     return res.status(403).json({ message: 'Not authorized' });
@@ -548,14 +646,25 @@ router.get('/admin/accepted', async (req, res) => {
     `;
     const [rows] = await pool.query(query);
     res.json(rows);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching accepted applications (admin):', error);
     res.status(500).json({ error: 'Failed to fetch accepted applications' });
   }
 });
 
 
-
+/**
+ * Get application file
+ * @route GET /api/applications/file/:applicationId/:fileType/:index?
+ * @param {string} applicationId - Application ID
+ * @param {string} fileType - Type of file (transcript/english/other)
+ * @param {string} [index] - Index for other certificates
+ * @returns {File} Requested file
+ * @throws {404} File not found
+ * @throws {400} Invalid file type
+ * @throws {500} Server error
+ */
 router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
     try {
         const { applicationId, fileType, index = 0 } = req.params;
@@ -588,7 +697,8 @@ router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
                     if (!Array.isArray(otherFiles)) {
                         otherFiles = [otherFiles];
                     }
-                } catch (e) {
+                } 
+                catch (e) {
                     otherFiles = [];
                 }
 
@@ -630,12 +740,19 @@ router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
         res.setHeader('Content-Disposition', 'inline');
         res.sendFile(filePath);
 
-    } catch (error) {
+    } 
+    catch (error) {
         res.status(500).json({ error: 'Error serving file' });
     }
 });
 
-
+/**
+ * Check user's application status
+ * @route GET /api/applications/check-status
+ * @returns {Object} Application status
+ * @throws {401} Not authenticated
+ * @throws {500} Server error
+ */
 router.get('/check-status', async (req, res) => {
     try {
         if (!req.session.user) {
@@ -650,7 +767,8 @@ router.get('/check-status', async (req, res) => {
         res.json({
             hasApplication: applications.length > 0
         });
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error checking application status:', error);
         res.status(500).json({ error: 'Server error' });
     }
