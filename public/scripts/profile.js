@@ -1,3 +1,8 @@
+/**
+ * @module profile
+ */
+
+// After DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/auth/me', {
@@ -38,7 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-
+/**
+ * Sets up real-time validation for profile form fields.
+ * @function setupRealTimeValidation
+ * @returns {void}
+ */
 function setupRealTimeValidation() {
     const fields = [
         { id: 'firstName', validator: (value) => validateName(value, 'όνομα') },
@@ -70,6 +79,13 @@ function setupRealTimeValidation() {
     });
 }
 
+/**
+ * Validates a name field to ensure it is not empty and does not contain digits.
+ * @function validateName
+ * @param {string} value - The name value to validate.
+ * @param {string} fieldName - The name of the field
+ * @returns {string|null} - Returns an error message if validation fails, otherwise null.
+ */
 function validateName(value, fieldName) {
     if (!value || value.trim() === '') {
         return `Το ${fieldName} είναι υποχρεωτικό`;
@@ -80,6 +96,12 @@ function validateName(value, fieldName) {
     return null;
 }
 
+/**
+ * Validates studentId
+ * @function validateStudentId
+ * @param {string} value - The student ID to validate.
+ * @returns {string|null} - Returns an error message if validation fails, otherwise null.
+ */
 function validateStudentId(value) {
     if (!value || value.trim() === '') {
         return 'Ο αριθμός μητρώου είναι υποχρεωτικός';
@@ -90,6 +112,12 @@ function validateStudentId(value) {
     return null;
 }
 
+/**
+ * Validates phone number
+ * @function validatePhone
+ * @param {string} value - The phone number to validate.
+ * @returns {string|null} - Returns an error message if validation fails, otherwise null.
+ */
 function validatePhone(value) {
     if (!value || value.trim() === '') {
         return 'Το τηλέφωνο είναι υποχρεωτικό';
@@ -100,6 +128,12 @@ function validatePhone(value) {
     return null;
 }
 
+/**
+ * Validates email address
+ * @function validateEmail
+ * @param {string} value - The email address to validate.
+ * @returns {string|null} - Returns an error message if validation fails, otherwise null.
+ */
 function validateEmail(value) {
     if (!value || value.trim() === '') {
         return 'Το email είναι υποχρεωτικό';
@@ -111,6 +145,13 @@ function validateEmail(value) {
     return null;
 }
 
+
+/**
+ * Validates password field
+ * @function validatePassword
+ * @param {string} value - The password to validate.
+ * @returns {string|null} - Returns an error message if validation fails, otherwise null.
+ */
 function validatePassword(value) {
     if (!value) return null; // Password is optional
     if (value.length < 5) {
@@ -122,6 +163,14 @@ function validatePassword(value) {
     return null;
 }
 
+
+/**
+ * Shows an error message for a specific field
+ * @function showFieldError
+ * @param {string} fieldId - The ID of the field to show the error for.
+ * @param {string} errorMessage - The error message to display.
+ * @returns {void}
+ */
 function showFieldError(fieldId, errorMessage) {
     const field = document.getElementById(fieldId);
     if (!field) return;
@@ -142,6 +191,13 @@ function showFieldError(fieldId, errorMessage) {
     field.parentNode.appendChild(errorDiv);
 }
 
+
+/**
+ * Clears any error message for a specific field
+ * @function clearFieldError
+ * @param {string} fieldId - The ID of the field to clear the error for.
+ * @returns {void}
+ */
 function clearFieldError(fieldId) {
     const field = document.getElementById(fieldId);
     if (!field) return;
@@ -153,6 +209,13 @@ function clearFieldError(fieldId) {
     }
 }
 
+/**
+ * Handles the profile form submission
+ * @function handleProfileSubmit
+ * @async
+ * @param {Event} e - The form submit event.
+ * @returns {Promise<void>}
+ */
 async function handleProfileSubmit(e) {
     e.preventDefault();
     
@@ -220,15 +283,23 @@ async function handleProfileSubmit(e) {
             showMessage('profile-success', 'Τα στοιχεία σας ενημερώθηκαν επιτυχώς');
             document.getElementById('password').value = '';
             setTimeout(() => window.location.reload(), 1500);
-        } else {
+        } 
+        else {
             showMessage('profile-error', data.error || data.message || 'Σφάλμα κατά την ενημέρωση των στοιχείων');
         }
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error updating profile:', error);
         showMessage('profile-error', 'Σφάλμα κατά την ενημέρωση των στοιχείων');
     }
 }
 
+/**
+ * Fetches the current user's data from the server.
+ * @function getCurrentUser
+ * @async
+ * @returns {Promise<Object>} - Returns a promise that resolves to the current user's data.
+ */
 async function getCurrentUser() {
     const response = await fetch('/auth/me', {
         credentials: 'include'
@@ -242,6 +313,13 @@ async function getCurrentUser() {
     return data.user || data;
 }
 
+/**
+ * Displays a message to the user
+ * @function showMessage
+ * @param {string} elementId - The ID of the element to display the message in.
+ * @param {string} message - The message to display (supports HTML).
+ * @returns {void}
+ */
 function showMessage(elementId, message) {
     const element = document.getElementById(elementId);
     if (element) {

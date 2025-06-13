@@ -239,7 +239,8 @@ async function checkUsernameExists(username) {
             return data.exists;
         }
         return false;
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error checking username:', error);
         return false;
     }

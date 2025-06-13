@@ -28,18 +28,29 @@ if (!fs.existsSync(uploadDir)) {
 //multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Double-check directory exists
+        const userId = req.body.user_id;
+        
+        // Create user-specific subfolder path
+        const userUploadDir = path.join(uploadDir, `user_${userId}`);
+        
+        // Ensure main upload directory exists
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
-        cb(null, uploadDir);
+        
+        // Create user-specific directory if it doesn't exist
+        if (!fs.existsSync(userUploadDir)) {
+            fs.mkdirSync(userUploadDir, { recursive: true });
+        }
+        
+        cb(null, userUploadDir);
     },
     filename: function (req, file, cb) {
         const userId = req.body.user_id;
         const fileType = file.fieldname.replace('_file', '');
         const ext = path.extname(file.originalname);
-        // Create unique filename that won't conflict
-        const filename = `${fileType}_${userId}_${Date.now()}${ext}`;
+        // we're already in user folder
+        const filename = `${fileType}_${Date.now()}${ext}`;
         cb(null, filename);
     }
 });
@@ -356,11 +367,10 @@ router.delete('/:id', async (req, res) => {
 
     try {
         const applicationId = parseInt(req.params.id);
-        const uploadsDir = path.join(__dirname, '..', 'uploads');
         
-        // Get all files from the application
+        // Get application details including user_id
         const [applications] = await pool.query(
-            'SELECT transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?', 
+            'SELECT user_id, transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?', 
             [applicationId]
         );
 
@@ -369,38 +379,52 @@ router.delete('/:id', async (req, res) => {
         }
 
         const application = applications[0];
-
-        // Get all files in uploads directory
-        const allFiles = fs.readdirSync(uploadsDir);
+        const userUploadDir = path.join(__dirname, '..', 'uploads', `user_${application.user_id}`);
         
-        // Find files related to this application
-        const relatedFiles = allFiles.filter(filename => {
-            return filename.includes(`_${applicationId}_`) || 
-                   filename === application.transcript_file || 
-                   filename === application.english_certificate_file ||
-                   (application.other_certificates_files && 
-                    application.other_certificates_files.includes(filename));
-        });
+        // Check if user directory exists
+        if (!fs.existsSync(userUploadDir)) {
+            console.warn(`User upload directory not found: ${userUploadDir}`);
+        } else {
+            // Get all files in user's directory
+            const allFiles = fs.readdirSync(userUploadDir);
+            
+            // Find files related to this application
+            const relatedFiles = allFiles.filter(filename => {
+                return filename === application.transcript_file || 
+                       filename === application.english_certificate_file ||
+                       (application.other_certificates_files && 
+                        application.other_certificates_files.includes(filename));
+            });
 
-        // Delete the files
-        relatedFiles.forEach(filename => {
-            const filePath = path.join(uploadsDir, filename);
-            try {
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
+            // Delete the files
+            relatedFiles.forEach(filename => {
+                const filePath = path.join(userUploadDir, filename);
+                try {
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                    }
+                } 
+                catch (err) {
+                    console.warn(`Failed to delete file ${filename}:`, err);
                 }
-            } 
-            catch (err) {
-                console.warn(`Failed to delete file ${filename}:`, err);
+            });
+
+            // Optional: Remove empty user directory
+            try {
+                const remainingFiles = fs.readdirSync(userUploadDir);
+                if (remainingFiles.length === 0) {
+                    fs.rmdirSync(userUploadDir);
+                }
+            } catch (err) {
+                console.warn(`Could not remove empty directory ${userUploadDir}:`, err);
             }
-        });
+        }
 
         // Delete the application from database
         await pool.query('DELETE FROM applications WHERE id = ?', [applicationId]);
 
         res.json({ 
-            message: 'Application deleted successfully',
-            deletedFiles: relatedFiles
+            message: 'Application deleted successfully'
         });
 
     } 
@@ -668,29 +692,41 @@ router.get('/admin/accepted', async (req, res) => {
 router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
     try {
         const { applicationId, fileType, index = 0 } = req.params;
-        const uploadsDir = path.join(__dirname, '..', 'uploads');
         
-        const query = 'SELECT transcript_file, english_certificate_file, other_certificates_files FROM applications WHERE id = ?';
+        // Get application details including user_id
+        const query = `
+            SELECT a.user_id, a.transcript_file, a.english_certificate_file, a.other_certificates_files 
+            FROM applications a 
+            WHERE a.id = ?
+        `;
         const [rows] = await pool.query(query, [applicationId]);
         
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Application not found' });
         }
 
+        const application = rows[0];
+        const userUploadDir = path.join(__dirname, '..', 'uploads', `user_${application.user_id}`);
+
         let filePath;
         switch(fileType) {
             case 'transcript':
-                filePath = path.join(uploadsDir, rows[0].transcript_file);
+                filePath = path.join(userUploadDir, application.transcript_file);
                 break;
             case 'english':
-                filePath = path.join(uploadsDir, rows[0].english_certificate_file);
+                filePath = path.join(userUploadDir, application.english_certificate_file);
                 break;
             case 'other':
-                const allFiles = fs.readdirSync(uploadsDir);
+                // Check if user directory exists first
+                if (!fs.existsSync(userUploadDir)) {
+                    return res.status(404).json({ error: 'User upload directory not found' });
+                }
 
+                const allFiles = fs.readdirSync(userUploadDir);
+                
                 let otherFiles;
                 try {
-                    otherFiles = rows[0].other_certificates_files;
+                    otherFiles = application.other_certificates_files;
                     if (typeof otherFiles === 'string') {
                         otherFiles = JSON.parse(otherFiles);
                     }
@@ -718,7 +754,7 @@ router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
                     });
                 }
 
-                filePath = path.join(uploadsDir, otherCertFiles[fileIndex]);
+                filePath = path.join(userUploadDir, otherCertFiles[fileIndex]);
                 break;
             default:
                 return res.status(400).json({ error: 'Invalid file type' });
@@ -740,12 +776,11 @@ router.get('/file/:applicationId/:fileType/:index?', async (req, res) => {
         res.setHeader('Content-Disposition', 'inline');
         res.sendFile(filePath);
 
-    } 
-    catch (error) {
+    } catch (error) {
+        console.error('Error serving file:', error);
         res.status(500).json({ error: 'Error serving file' });
     }
 });
-
 /**
  * Check user's application status
  * @route GET /api/applications/check-status

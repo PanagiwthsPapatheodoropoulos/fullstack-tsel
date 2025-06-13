@@ -129,11 +129,13 @@ handleLogIn = async (e) => {
             setTimeout(() => {
                 if (data.user && data.user.role === 'administrator') {
                     window.location.href = 'admin.html';
-                } else {
+                } 
+                else {
                     window.location.href = 'index.html';
                 }
             }, 2000);
-        } else {
+        } 
+        else {
             showError(data.message || 'Σφάλμα κατά την είσοδο');
         }
     } 

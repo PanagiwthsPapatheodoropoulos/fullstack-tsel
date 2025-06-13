@@ -41,7 +41,8 @@ async function loadResults() {
         const results = await response.json();
         displayResults(results);
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error loading results:', error);
         showMessage('results-error', 'Σφάλμα κατά τη φόρτωση των αποτελεσμάτων');
     }
