@@ -4,10 +4,6 @@
 3. npm (Node Package Manager)
 
 
-# Sensitive Data
-> ⚠️Στο `.env` αρχείο θα βρείτε ευαίσθητα δεδομένα που πρέπει να αλλάξετε για το δικό σας περιβάλλον.
-
-
 # Installation Commands
 ```bash
 npm install
@@ -24,13 +20,10 @@ npm start
 ``` 
 
 # NOTE
-The site works only on localhost.Might deploy later
+The site only works on localhost.Might deploy later
 
-# For public results
-run the sql command
-```sql
-UPDATE application_periods 
-SET is_active = 0,
-    end_date = '2025-06-15 00:00:00'
-WHERE id > 0;
-```
+## Copyright and Licensing
+
+Copyright (c) 2025 Your Name. All rights reserved.
+
+This project is licensed under the terms of the MIT License. A copy of the license can be found in the [LICENSE](LICENSE) file in the root of this repository.
