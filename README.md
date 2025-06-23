@@ -24,6 +24,6 @@ The site only works on localhost.Might deploy later
 
 ## Copyright and Licensing
 
-Copyright (c) 2025 Your Name. All rights reserved.
+Copyright (c) 2025 Panagiotis Papatheodoropoulos. All rights reserved.
 
 This project is licensed under the terms of the MIT License. A copy of the license can be found in the [LICENSE](LICENSE) file in the root of this repository.
